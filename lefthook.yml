@@ -1,5 +1,6 @@
 # Formatting and linting are file-scoped, so they run on exactly what is staged.
-# The build is package-scoped, so it runs on whichever app the changes belong to.
+# The build is package-scoped, so it runs on whichever packages the outgoing
+# commits touch — plus anything that depends on them.
 
 pre-commit:
   parallel: false
@@ -16,4 +17,12 @@ pre-commit:
 pre-push:
   jobs:
     - name: build
-      run: pnpm exec turbo run build --affected
+      # turbo's default baseline is the `main` branch, which is nothing at all
+      # when you are on main. Compare against the remote instead, and build
+      # everything when there is no remote branch to compare against yet.
+      run: |
+        if git rev-parse --verify --quiet origin/main > /dev/null; then
+          TURBO_SCM_BASE=origin/main pnpm exec turbo run build --affected
+        else
+          pnpm exec turbo run build
+        fi

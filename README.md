@@ -18,6 +18,13 @@ pnpm dev
 - API — http://localhost:4000/health
 
 `pnpm build`, `pnpm check-types` and `pnpm test` run across every package.
+`pnpm lint` and `pnpm format` are oxlint and oxfmt, which run over the whole
+repo in one pass rather than per package.
+
+Git hooks are lefthook's, installed by `pnpm install`. Committing formats and
+lints the staged files; pushing builds whichever packages the outgoing commits
+touch. Markdown is deliberately left unformatted, so the ADRs keep their
+hand-wrapped prose.
 
 ## Layout
 
