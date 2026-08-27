@@ -1,6 +1,6 @@
 # The monorepo shape, and what may not be shared
 
-One pnpm workspace, driven by Turborepo, holding three apps and one shared package:
+One pnpm workspace, driven by Turborepo, holding three apps and two shared packages:
 
 | Path | What it is | Port in dev |
 |---|---|---|
@@ -10,9 +10,9 @@ One pnpm workspace, driven by Turborepo, holding three apps and one shared packa
 | `packages/domain` | The words in CONTEXT.md, as types and functions | — |
 | `packages/ui` | The design system and every shadcn/ui component (ADR 0016) | — |
 
-`packages/domain` ships TypeScript source rather than a build step, so there is no
-compile order to think about. Vite bundles it for `play`; tsup bundles it into
-`api`'s output. The landing page imports nothing from it.
+Both shared packages ship TypeScript source rather than a build step, so there is no
+compile order to think about. Vite bundles them for `play`, tsup bundles `domain`
+into `api`'s output, and Next compiles `ui` through `transpilePackages`.
 
 ## What the shared package is for, and what it must never hold
 

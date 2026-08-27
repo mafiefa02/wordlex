@@ -10,14 +10,16 @@
 /*
   Theme follows the operating system with no JavaScript. `data-theme` on <html>
   overrides it in either direction, for when there is a manual switch to build.
+  It is a root-level switch only — scoping a theme to a subtree would light up
+  `dark:` utilities without moving the tokens underneath them.
 */
 @custom-variant dark {
   @media (prefers-color-scheme: dark) {
-    &:where(:not([data-theme="light"], [data-theme="light"] *)) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
       @slot;
     }
   }
-  &:where([data-theme="dark"], [data-theme="dark"] *) {
+  &:where(:root[data-theme="dark"], :root[data-theme="dark"] *) {
     @slot;
   }
 }
@@ -124,6 +126,7 @@
   --radius: 0.5rem;
 }
 
+/* Dark palette, copy 1 of 2 — keep in step with the [data-theme="dark"] block. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
@@ -168,7 +171,8 @@
   }
 }
 
-[data-theme="dark"] {
+/* Dark palette, copy 2 of 2 — keep in step with the prefers-color-scheme block. */
+:root[data-theme="dark"] {
   color-scheme: dark;
 
   --background: #131614;
