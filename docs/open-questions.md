@@ -12,7 +12,9 @@ Things deliberately left undecided, work that must happen before launch, and wor
 
 ## Launch gates
 
-**The word pipeline.** `scripts/build-words.mjs` has to come back (ADR 0018). It fetches ADR 0004's sources, applies the four mechanical filters ADR 0013 says actually ship, and writes the committed CSV that seeds the `word` table. Nothing is playable until it has run. It is recoverable from `ba775eb`, but it has never emitted rows, so the output shape is new work — and realistically this is the larger half of the remaining unknowns, not the schema.
+None left that are about words. `scripts/build-words.mjs` is back and `data/words.csv` is committed: 124,734 Dictionary rows across the twelve Tracks, of which 9,602 are answerable. Every pre-filter Answer Pool size reproduces ADR 0004's table exactly, and the Webster filter reproduces ADR 0013's. LDNOOBW drops 28 further English words, a number that ADR 0013 never published.
+
+One measurement to keep in view: the filters leave Sundanese 5-letter with 272 answerable words, so that Track starts repeating after about nine months. ADR 0004's warning that Sundanese 5 is the one to watch survives the measurement; ADR 0013's aside that every Track keeps more than two years of runway does not. Nothing breaks — an exhausted pool starts again as the next Rotation (ADR 0019) — but see "Answer Pool runway" below.
 
 Every word-*quality* step is still either mechanical or deferred — see ADR 0013's "What actually ships".
 

@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx --env-file=.env scripts/seed-words.ts",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {

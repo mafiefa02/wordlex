@@ -12,6 +12,7 @@ pnpm install
 docker compose up -d --wait
 cp apps/api/.env.example apps/api/.env
 pnpm --filter @wordlex/api db:migrate
+pnpm --filter @wordlex/api db:seed
 pnpm dev
 ```
 

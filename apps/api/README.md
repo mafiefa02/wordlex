@@ -7,6 +7,7 @@ never learns the Answer (ADR 0003).
 docker compose -f ../../docker-compose.yml up -d --wait
 cp .env.example .env
 pnpm db:migrate
+pnpm db:seed                  # 124k rows from data/words.csv
 pnpm dev                      # http://localhost:4000/health
 ```
 
@@ -16,8 +17,14 @@ stops the server rather than starting an API that rejects every browser.
 **The Dictionary and the Answer Pool belong to this app and must not move.** They
 are rows in one `word` table (ADR 0018), reached only through this app's connection
 string — which is now the only thing keeping ADR 0003 true, so no other app gets
-one. Both tables exist but are empty; `scripts/build-words.mjs` has to be written
-before anything is playable.
+one.
+
+`pnpm db:seed` loads `data/words.csv`, which `scripts/build-words.mjs` at the repo
+root builds from ADR 0004's sources. Neither is run automatically: regenerating
+is a deliberate act perhaps twice a year, and the diff is the point. **The seed
+never overwrites a reviewer** — it upserts only rows still marked `derived` with
+no `reviewed_at`, or re-running the derivation would resurrect every word a
+speaker rejected.
 
 ## The database
 
