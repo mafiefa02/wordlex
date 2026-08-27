@@ -2,7 +2,8 @@ import { randomUUID } from "node:crypto";
 import type { Language, Length } from "@wordlex/domain";
 import { sql } from "drizzle-orm";
 import type { InjectOptions, LightMyRequestResponse } from "fastify";
-import { buildApp } from "../src/build-app";
+import Fastify from "fastify";
+import { configureApp } from "../src/build-app";
 import { db, word } from "../src/db";
 import { signIn } from "./auth";
 import { ORIGIN } from "./config";
@@ -12,7 +13,7 @@ import { ORIGIN } from "./config";
  * instance for the whole run: it holds no state of its own, and everything a
  * test needs to vary lives in the database or in a cookie.
  */
-export const api = await buildApp({ logger: false });
+export const api = await configureApp(Fastify({ logger: false }));
 
 type Seed = {
   language: Language;

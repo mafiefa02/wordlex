@@ -1,11 +1,12 @@
-import { buildApp } from "./build-app.js";
+import Fastify from "fastify";
+import { configureApp } from "./build-app.js";
 import { env } from "./env.js";
-import { logFatalExits } from "./logger.js";
+import { LOG_LEVEL, logFatalExits } from "./logger.js";
 
 // Before the app exists, so a failure while it is being built is logged too.
 logFatalExits();
 
-const app = await buildApp();
+const app = await configureApp(Fastify({ logger: { level: LOG_LEVEL } }));
 
 // Worth a line: a Secure cookie over plain http is dropped by Safari and kept
 // by Chrome, so getting this wrong locally looks like a 401 with no cause.

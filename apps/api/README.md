@@ -66,7 +66,10 @@ tmpfs, so every run migrates `drizzle/` from nothing, which is the point: the
 migrations are part of what is under test.
 
 The tests drive the app through `app.inject()` rather than a port, which is why
-`buildApp()` lives in `src/build-app.ts` and `src/server.ts` is four lines. Each
+`configureApp()` lives in `src/build-app.ts` and `src/server.ts` is a handful of
+lines. `server.ts` constructs Fastify and `configureApp` takes the instance:
+Vercel only recognises a server entrypoint that imports `fastify` itself, and
+the two callers want different logging. Each
 Track's Answer Pool is seeded with exactly one word, so `random()` in
 `wordlex_issue_daily` has nothing to choose between and today's Answer is known
 before a test starts. `browser()` in `tests/helpers.ts` keeps the Game token the

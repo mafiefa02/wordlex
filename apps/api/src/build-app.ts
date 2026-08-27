@@ -3,7 +3,7 @@ import cors from "@fastify/cors";
 import { type WordlexDay, wordlexDay } from "@wordlex/domain";
 import { fromNodeHeaders } from "better-auth/node";
 import { sql } from "drizzle-orm";
-import Fastify, { type FastifyError, type FastifyServerOptions } from "fastify";
+import type { FastifyError, FastifyInstance } from "fastify";
 import { auth } from "./auth.js";
 import { registerDaily } from "./daily.js";
 import { db } from "./db/index.js";
@@ -11,28 +11,26 @@ import { env } from "./env.js";
 import { registerGame } from "./game.js";
 import { registerGuess } from "./guess.js";
 import { type ApiSuccess, fail } from "./http.js";
-import { logger } from "./logger.js";
 import { registerMe } from "./me.js";
 
 /**
  * The whole API, minus listening. Split out so the tests can drive it through
  * `app.inject()` — importing `server.ts` would bind a port.
  *
- * **Not named `app.ts`**, which is what it wants to be called. Vercel's Node
- * runtime picks the deployed entrypoint by filename — `app`, `index` or
- * `server`, in the package root or `src/` — and `app.ts` won that race over
- * `server.ts`, so every request reached a module exporting a builder rather
- * than a server and died on it. The name is what keeps the right file in front.
+ * Takes an instance rather than building one, so `server.ts` is what constructs
+ * Fastify. Two reasons, and the second is why the first is affordable: the
+ * caller decides its own logging, which the tests want silent and the deployed
+ * server wants real; and Vercel's Node runtime only recognises an entrypoint
+ * that imports `fastify` *itself*, so the construction has to live in the file
+ * it deploys.
+ *
+ * **Not named `app.ts`**, which is what it wants to be called. Vercel picks that
+ * entrypoint by filename — `app`, `index` or `server`, in the package root or
+ * `src/` — and `app.ts` won the race over `server.ts`, so every request reached
+ * a module exporting a builder rather than a server. The name keeps the right
+ * file in front.
  */
-export async function buildApp(options: FastifyServerOptions = {}) {
-  // `loggerInstance`, not `logger` — Fastify takes a *configuration object*
-  // under `logger` and an already-built pino under `loggerInstance`, and refuses
-  // the two together. So the shared instance goes in only when the caller has
-  // not asked for something else, which is how the tests stay silent.
-  const app = Fastify(
-    options.logger === undefined ? { loggerInstance: logger, ...options } : options,
-  );
-
+export async function configureApp(app: FastifyInstance) {
   await app.register(cors, {
     origin: env.allowedOrigins,
     credentials: true,

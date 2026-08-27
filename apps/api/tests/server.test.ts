@@ -1,6 +1,8 @@
 import { wordlexDay } from "@wordlex/domain";
 import { describe, expect, it } from "vitest";
-import { buildApp } from "../src/build-app";
+import Fastify from "fastify";
+import { configureApp } from "../src/build-app";
+import { LOG_LEVEL } from "../src/logger";
 import { db, game } from "../src/db";
 import { ORIGIN } from "./config";
 import { api, browser, failure } from "./helpers";
@@ -10,7 +12,7 @@ describe("the server", () => {
   // ever exercises the logger the deployed server actually uses. It was wrong
   // once, and the only symptom was the process refusing to start.
   it("boots with its own logger", async () => {
-    const app = await buildApp();
+    const app = await configureApp(Fastify({ logger: { level: LOG_LEVEL } }));
     await app.ready();
     await app.close();
   });
