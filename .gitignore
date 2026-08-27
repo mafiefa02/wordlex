@@ -1,0 +1,18 @@
+node_modules/
+.DS_Store
+
+# Build output
+dist/
+.next/
+.output/
+.nitro/
+.tanstack/
+.turbo/
+*.tsbuildinfo
+
+# Local config
+.env
+.env.local
+
+# Downloaded word-list sources, re-fetched by scripts/build-review-lists.mjs
+data/.cache/

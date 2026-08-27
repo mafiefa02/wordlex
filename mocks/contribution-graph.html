@@ -1,0 +1,679 @@
+<title>Four Ways to Draw a Year</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --ground: #fbfcfa;
+    --raised: #f2f5f1;
+    --ink: #16201c;
+    --ink-2: #4a554f;
+    --ink-3: #7d8883;
+    --rule: #dfe4df;
+
+    /* Sequential ramp — the game's own "correct" green. Empty step is neutral. */
+    --s0: #e8ebe7;
+    --s1: #c7e8da;
+    --s2: #8fd3b8;
+    --s3: #48b892;
+    --s4: #17805f;
+
+    /* Categorical — one hue per language. Validated light-mode, all six checks. */
+    --en: #3d7dea;
+    --id: #1fa47a;
+    --su: #b97514;
+    --jv: #c2429a;
+
+    --shadow: 0 1px 2px rgb(22 32 28 / 0.06), 0 8px 24px rgb(22 32 28 / 0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #131614;
+      --raised: #1c201d;
+      --ink: #e8ede9;
+      --ink-2: #a3aca7;
+      --ink-3: #6f7973;
+      --rule: #2a2f2c;
+
+      --s0: #232726;
+      --s1: #14453a;
+      --s2: #17654e;
+      --s3: #219c77;
+      --s4: #47c79c;
+
+      --en: #5289de;
+      --id: #26a87f;
+      --su: #c08a20;
+      --jv: #c44e9b;
+
+      --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.35);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #131614;
+    --raised: #1c201d;
+    --ink: #e8ede9;
+    --ink-2: #a3aca7;
+    --ink-3: #6f7973;
+    --rule: #2a2f2c;
+
+    --s0: #232726;
+    --s1: #14453a;
+    --s2: #17654e;
+    --s3: #219c77;
+    --s4: #47c79c;
+
+    --en: #5289de;
+    --id: #26a87f;
+    --su: #c08a20;
+    --jv: #c44e9b;
+
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.35);
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 56px 28px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 52px;
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead { display: flex; flex-direction: column; gap: 14px; }
+
+  h1 {
+    font-family: "Bricolage Grotesque", "IBM Plex Sans", sans-serif;
+    font-weight: 700;
+    font-size: clamp(30px, 4.4vw, 44px);
+    line-height: 1.04;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .standfirst {
+    color: var(--ink-2);
+    max-width: 62ch;
+    font-size: 16px;
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* ---------- shared key ---------- */
+
+  .key {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 26px;
+    padding: 14px 0;
+    border-block: 1px solid var(--rule);
+  }
+
+  .key-group { display: flex; align-items: center; gap: 8px; }
+
+  .key-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .swatch {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    flex: none;
+  }
+
+  .lang-key { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
+
+  .ramp { display: flex; gap: 3px; }
+
+  /* ---------- variant ---------- */
+
+  .variant { display: flex; flex-direction: column; gap: 16px; }
+
+  .variant-head { display: flex; flex-direction: column; gap: 5px; }
+
+  .variant-title { display: flex; align-items: baseline; gap: 11px; }
+
+  .tag {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ground);
+    background: var(--ink);
+    width: 21px;
+    height: 21px;
+    border-radius: 3px;
+    display: grid;
+    place-items: center;
+    flex: none;
+    align-self: center;
+  }
+
+  h2 {
+    font-family: "Bricolage Grotesque", "IBM Plex Sans", sans-serif;
+    font-weight: 700;
+    font-size: 21px;
+    letter-spacing: -0.015em;
+    margin: 0;
+  }
+
+  .rule-line { color: var(--ink-2); font-size: 14.5px; max-width: 68ch; }
+  .rule-line b { font-weight: 600; color: var(--ink); }
+
+  .plot {
+    overflow-x: auto;
+    padding: 18px 16px;
+    background: var(--raised);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+  }
+
+  .verdict {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 6px 30px;
+    font-size: 14px;
+  }
+
+  .verdict div { display: flex; gap: 9px; }
+
+  .verdict dt {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    flex: none;
+    padding-top: 3px;
+    width: 42px;
+  }
+
+  .verdict dd { margin: 0; color: var(--ink-2); }
+
+  /* ---------- the grids ---------- */
+
+  .cal {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(7, var(--cell));
+    gap: var(--gap);
+    width: max-content;
+    --cell: 11px;
+    --gap: 3px;
+  }
+
+  .cell {
+    width: var(--cell);
+    height: var(--cell);
+    border-radius: 2px;
+    background: var(--s0);
+  }
+
+  .cell:focus-visible,
+  .quad:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 1.5px;
+  }
+
+  /* C — quadrant cell */
+  .cal-quad { --cell: 16px; --gap: 4px; }
+
+  .quad {
+    width: var(--cell);
+    height: var(--cell);
+    display: grid;
+    grid-template: repeat(2, 1fr) / repeat(2, 1fr);
+    gap: 1px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .quad i { background: var(--s0); display: block; }
+
+  /* D — small multiples */
+  .stack { display: flex; flex-direction: column; gap: 13px; width: max-content; }
+  .strip { display: flex; align-items: center; gap: 12px; }
+
+  .strip-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    width: 34px;
+    flex: none;
+    text-align: right;
+  }
+
+  .cal-mini { --cell: 9px; --gap: 2px; }
+
+  .months {
+    display: grid;
+    grid-auto-flow: column;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    color: var(--ink-3);
+    width: max-content;
+    margin-bottom: 5px;
+    height: 13px;
+  }
+
+  /* ---------- tooltip ---------- */
+
+  #tip {
+    position: fixed;
+    z-index: 20;
+    pointer-events: none;
+    opacity: 0;
+    background: var(--ink);
+    color: var(--ground);
+    border-radius: 5px;
+    padding: 8px 11px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    box-shadow: var(--shadow);
+    white-space: nowrap;
+    transition: opacity 90ms ease;
+  }
+
+  #tip.on { opacity: 1; }
+  #tip .d { font-family: "IBM Plex Mono", monospace; font-size: 11px; opacity: 0.65; }
+  #tip .row { display: flex; align-items: center; gap: 7px; font-variant-numeric: tabular-nums; }
+  #tip .dot { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    #tip { transition: none; }
+  }
+
+  /* ---------- closing ---------- */
+
+  .close {
+    border-top: 1px solid var(--rule);
+    padding-top: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .close p { margin: 0; color: var(--ink-2); max-width: 66ch; }
+  .close b { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="page">
+  <header class="masthead">
+    <span class="eyebrow">WordleX · profile</span>
+    <h1>Four ways to draw a year</h1>
+    <p class="standfirst">
+      The play history should show <em>how much</em> you played each day and <em>which</em> of the
+      four languages. One small square can't carry both. Here are four answers on the same
+      371 days of made-up play. Hover any day.
+    </p>
+  </header>
+
+  <div class="key">
+    <div class="key-group">
+      <span class="key-label">Games</span>
+      <span class="ramp" id="ramp-key"></span>
+      <span style="font-size:13px;color:var(--ink-2)">0 → 12</span>
+    </div>
+    <div class="key-group" id="lang-key"></div>
+  </div>
+
+  <section class="variant">
+    <div class="variant-head">
+      <div class="variant-title"><span class="tag">A</span><h2>Intensity only</h2></div>
+      <p class="rule-line">
+        One cell = <b>how many games</b>, in one hue. Language lives in the tooltip.
+        GitHub's model, unchanged.
+      </p>
+    </div>
+    <div class="plot"><div id="plot-a"></div></div>
+    <dl class="verdict">
+      <div><dt>Buys</dt><dd>Densest and most legible. Instantly familiar. Reads fine at a glance on a phone.</dd></div>
+      <div><dt>Costs</dt><dd>Language is invisible until you hover — so it's absent entirely on touch.</dd></div>
+    </dl>
+  </section>
+
+  <section class="variant">
+    <div class="variant-head">
+      <div class="variant-title"><span class="tag">B</span><h2>Hue is the language</h2></div>
+      <p class="rule-line">
+        One cell = <b>the language you played most</b> that day, shaded by how many games.
+        Ties go to the language you played first.
+      </p>
+    </div>
+    <div class="plot"><div id="plot-b"></div></div>
+    <dl class="verdict">
+      <div><dt>Buys</dt><dd>Two facts per cell at full density. A month of Javanese is visible from across the room.</dd></div>
+      <div><dt>Costs</dt><dd>"Most" is a lie on mixed days — 2 English and 2 Javanese shows as one colour. Shade and hue compete.</dd></div>
+    </dl>
+  </section>
+
+  <section class="variant">
+    <div class="variant-head">
+      <div class="variant-title"><span class="tag">C</span><h2>Four quadrants</h2></div>
+      <p class="rule-line">
+        One cell = <b>four sub-squares</b>, one per language, each shaded by its own count.
+        Nothing is hidden and nothing is averaged.
+      </p>
+    </div>
+    <div class="plot"><div id="plot-c"></div></div>
+    <dl class="verdict">
+      <div><dt>Buys</dt><dd>Complete. Every language on every day, no tie-breaking, no lost information.</dd></div>
+      <div><dt>Costs</dt><dd>Needs 16px cells to read, so the year no longer fits — it scrolls. Busy days turn to mud.</dd></div>
+    </dl>
+  </section>
+
+  <section class="variant">
+    <div class="variant-head">
+      <div class="variant-title"><span class="tag">D</span><h2>One row per language</h2></div>
+      <p class="rule-line">
+        Four thin calendars stacked, <b>one per language</b>, each in its own hue.
+        Position carries the language; shade carries the count.
+      </p>
+    </div>
+    <div class="plot"><div id="plot-d"></div></div>
+    <dl class="verdict">
+      <div><dt>Buys</dt><dd>Unambiguous, and the only one where language survives without colour vision. Reads like a habit chart — gaps in one language are obvious.</dd></div>
+      <div><dt>Costs</dt><dd>Four times the height, and a language you've never touched is a permanently empty row.</dd></div>
+    </dl>
+  </section>
+
+  <div class="close">
+    <span class="eyebrow">Where I'd land</span>
+    <p>
+      <b>D for the profile page, A for anywhere small.</b> D is the only one that keeps every fact
+      without asking the reader to decode a colour, and empty rows are arguably a feature —
+      they're an invitation to try Sundanese. A is what belongs in a card or a share image,
+      where there's no room for four strips.
+    </p>
+    <p>
+      B is the tempting one and I'd avoid it: the tie-breaking rule is a fiction, and it puts the
+      whole encoding on hue, which is exactly what fails for colourblind readers and in print.
+      C is honest but only survives at a size that breaks the year.
+    </p>
+  </div>
+</div>
+
+<div id="tip" role="status" aria-live="polite"></div>
+
+<script type="module">
+  const LANGS = [
+    { key: "en", name: "English", css: "--en" },
+    { key: "id", name: "Indonesian", css: "--id" },
+    { key: "su", name: "Sundanese", css: "--su" },
+    { key: "jv", name: "Javanese", css: "--jv" },
+  ];
+  const WEEKS = 53;
+  const DAYS = WEEKS * 7;
+  const END = new Date(Date.UTC(2026, 7, 29)); // a Saturday, so the grid ends flush
+
+  /* Deterministic, so all four variants show the identical year. */
+  function mulberry32(a) {
+    return function () {
+      a |= 0;
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /**
+   * A plausible player: English and Indonesian near-daily, a Javanese phase in
+   * the spring, a couple of Sundanese experiments, one holiday gap, and a slow
+   * first month while the habit forms.
+   */
+  function buildYear() {
+    const rand = mulberry32(20260829);
+    const days = [];
+    for (let i = 0; i < DAYS; i++) {
+      const date = new Date(END);
+      date.setUTCDate(date.getUTCDate() - (DAYS - 1 - i));
+      const counts = { en: 0, id: 0, su: 0, jv: 0 };
+      const warmup = Math.min(1, i / 40); // habit forming
+      const gap = i > 196 && i < 209; // two weeks away
+      const jvPhase = i > 250 && i < 300;
+      const suDabble = rand() < 0.05;
+
+      if (!gap && rand() < 0.12 + 0.78 * warmup) {
+        counts.id = 1 + (rand() < 0.45 ? 1 : 0) + (rand() < 0.18 ? 1 : 0);
+        if (rand() < 0.8) counts.en = 1 + (rand() < 0.3 ? 1 : 0);
+        if (jvPhase && rand() < 0.7) counts.jv = 1 + (rand() < 0.35 ? 1 : 0);
+        else if (rand() < 0.06) counts.jv = 1;
+        if (suDabble) counts.su = 1 + (rand() < 0.2 ? 1 : 0);
+      }
+      const total = counts.en + counts.id + counts.su + counts.jv;
+      days.push({ date, counts, total });
+    }
+    return days;
+  }
+
+  const YEAR = buildYear();
+
+  /* --- shared tooltip ------------------------------------------------- */
+
+  const tip = document.getElementById("tip");
+  const fmt = new Intl.DateTimeFormat("en-GB", {
+    weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC",
+  });
+
+  function showTip(event, day) {
+    const rows = LANGS.filter((l) => day.counts[l.key] > 0)
+      .map(
+        (l) =>
+          `<div class="row"><span class="dot" style="background:var(${l.css})"></span>` +
+          `${l.name} · ${day.counts[l.key]}</div>`,
+      )
+      .join("");
+    tip.innerHTML =
+      `<div class="d">${fmt.format(day.date)}</div>` +
+      (day.total
+        ? `<div style="margin-top:3px">${day.total} game${day.total > 1 ? "s" : ""}</div>${rows}`
+        : `<div style="margin-top:3px;opacity:.65">No games</div>`);
+    tip.classList.add("on");
+    place(event);
+  }
+
+  function place(event) {
+    const pad = 14;
+    const r = tip.getBoundingClientRect();
+    let x = event.clientX + pad;
+    let y = event.clientY - r.height - 10;
+    if (x + r.width > innerWidth - 8) x = event.clientX - r.width - pad;
+    if (y < 8) y = event.clientY + pad;
+    tip.style.left = `${x}px`;
+    tip.style.top = `${y}px`;
+  }
+
+  const hideTip = () => tip.classList.remove("on");
+
+  function wire(el, day) {
+    el.tabIndex = 0;
+    el.setAttribute("role", "img");
+    el.setAttribute(
+      "aria-label",
+      `${fmt.format(day.date)}: ` +
+        (day.total
+          ? LANGS.filter((l) => day.counts[l.key])
+              .map((l) => `${l.name} ${day.counts[l.key]}`)
+              .join(", ")
+          : "no games"),
+    );
+    el.addEventListener("pointerenter", (e) => showTip(e, day));
+    el.addEventListener("pointermove", place);
+    el.addEventListener("pointerleave", hideTip);
+    el.addEventListener("focus", () => {
+      const b = el.getBoundingClientRect();
+      showTip({ clientX: b.left + b.width / 2, clientY: b.top }, day);
+    });
+    el.addEventListener("blur", hideTip);
+  }
+
+  /* --- scales --------------------------------------------------------- */
+
+  /** Total games (0–12) onto the 5-step sequential ramp. */
+  const stepFor = (n) => (n === 0 ? 0 : n <= 2 ? 1 : n <= 4 ? 2 : n <= 7 ? 3 : 4);
+  /** A single language's count (0–3) onto opacity, so hue reads as identity. */
+  const alphaFor = (n) => (n === 0 ? 0 : n === 1 ? 0.42 : n === 2 ? 0.7 : 1);
+
+  const monthRow = (cellW) => {
+    const row = document.createElement("div");
+    row.className = "months";
+    row.style.gridTemplateColumns = `repeat(${WEEKS}, ${cellW}px)`;
+    let last = -1;
+    for (let w = 0; w < WEEKS; w++) {
+      const d = YEAR[w * 7].date;
+      const span = document.createElement("span");
+      if (d.getUTCMonth() !== last && w < WEEKS - 1) {
+        span.textContent = d.toLocaleString("en-GB", { month: "short", timeZone: "UTC" });
+        last = d.getUTCMonth();
+      }
+      row.append(span);
+    }
+    return row;
+  };
+
+  /* --- A: intensity only ---------------------------------------------- */
+  {
+    const host = document.getElementById("plot-a");
+    host.append(monthRow(14));
+    const cal = document.createElement("div");
+    cal.className = "cal";
+    for (const day of YEAR) {
+      const c = document.createElement("div");
+      c.className = "cell";
+      c.style.background = `var(--s${stepFor(day.total)})`;
+      wire(c, day);
+      cal.append(c);
+    }
+    host.append(cal);
+  }
+
+  /* --- B: hue is the dominant language -------------------------------- */
+  {
+    const host = document.getElementById("plot-b");
+    host.append(monthRow(14));
+    const cal = document.createElement("div");
+    cal.className = "cal";
+    for (const day of YEAR) {
+      const c = document.createElement("div");
+      c.className = "cell";
+      if (day.total) {
+        // Ties resolve by the fixed language order — the fiction this variant rests on.
+        const top = LANGS.reduce((a, b) => (day.counts[b.key] > day.counts[a.key] ? b : a));
+        c.style.background = `var(${top.css})`;
+        c.style.opacity = String(0.34 + 0.66 * (stepFor(day.total) / 4));
+      }
+      wire(c, day);
+      cal.append(c);
+    }
+    host.append(cal);
+  }
+
+  /* --- C: four quadrants ---------------------------------------------- */
+  {
+    const host = document.getElementById("plot-c");
+    host.append(monthRow(20));
+    const cal = document.createElement("div");
+    cal.className = "cal cal-quad";
+    for (const day of YEAR) {
+      const c = document.createElement("div");
+      c.className = "quad";
+      for (const l of LANGS) {
+        const q = document.createElement("i");
+        const n = day.counts[l.key];
+        if (n) {
+          q.style.background = `var(${l.css})`;
+          q.style.opacity = String(alphaFor(n));
+        }
+        c.append(q);
+      }
+      wire(c, day);
+      cal.append(c);
+    }
+    host.append(cal);
+  }
+
+  /* --- D: one row per language ---------------------------------------- */
+  {
+    const host = document.getElementById("plot-d");
+    const stack = document.createElement("div");
+    stack.className = "stack";
+    const head = document.createElement("div");
+    head.className = "strip";
+    head.innerHTML = `<span class="strip-label"></span>`;
+    head.append(monthRow(11));
+    stack.append(head);
+
+    for (const l of LANGS) {
+      const strip = document.createElement("div");
+      strip.className = "strip";
+      const label = document.createElement("span");
+      label.className = "strip-label";
+      label.textContent = l.key;
+      const cal = document.createElement("div");
+      cal.className = "cal cal-mini";
+      for (const day of YEAR) {
+        const c = document.createElement("div");
+        c.className = "cell";
+        const n = day.counts[l.key];
+        if (n) {
+          c.style.background = `var(${l.css})`;
+          c.style.opacity = String(alphaFor(n));
+        }
+        wire(c, day);
+        cal.append(c);
+      }
+      strip.append(label, cal);
+      stack.append(strip);
+    }
+    host.append(stack);
+  }
+
+  /* --- key ------------------------------------------------------------ */
+  {
+    const ramp = document.getElementById("ramp-key");
+    for (let i = 0; i < 5; i++) {
+      const s = document.createElement("span");
+      s.className = "swatch";
+      s.style.background = `var(--s${i})`;
+      ramp.append(s);
+    }
+    const langKey = document.getElementById("lang-key");
+    for (const l of LANGS) {
+      const wrap = document.createElement("span");
+      wrap.className = "lang-key";
+      wrap.innerHTML = `<span class="swatch" style="background:var(${l.css})"></span>${l.name}`;
+      langKey.append(wrap);
+    }
+  }
+
+  addEventListener("scroll", hideTip, { passive: true });
+</script>
