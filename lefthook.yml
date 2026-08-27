@@ -1,28 +1,49 @@
 # Formatting and linting are file-scoped, so they run on exactly what is staged.
-# The build is package-scoped, so it runs on whichever packages the outgoing
-# commits touch — plus anything that depends on them.
+# The build is package-scoped, so it runs on whichever packages have changed —
+# committed or not — plus anything that depends on them.
 
 pre-commit:
   parallel: false
   jobs:
     - name: format
-      glob: "*.{js,jsx,ts,tsx,json,css}"
+      glob: "*.{js,jsx,mjs,cjs,ts,tsx,mts,cts,json,css}"
+      # Kept in step with ignorePatterns in .oxfmtrc.jsonc. Without this, a
+      # commit of only ignored files hands oxfmt nothing and it exits 2.
+      exclude:
+        - "apps/play/src/routeTree.gen.ts"
+        - "apps/landing/next-env.d.ts"
+        - ".claude/**/*"
+        - ".agents/**/*"
+        - ".intent/**/*"
       run: pnpm exec oxfmt {staged_files}
       stage_fixed: true
 
     - name: lint
-      glob: "*.{js,jsx,ts,tsx}"
+      glob: "*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"
+      exclude:
+        - "apps/play/src/routeTree.gen.ts"
+        - "apps/landing/next-env.d.ts"
+        - ".claude/**/*"
+        - ".agents/**/*"
+        - ".intent/**/*"
       run: pnpm exec oxlint {staged_files}
 
 pre-push:
   jobs:
     - name: build
-      # turbo's default baseline is the `main` branch, which is nothing at all
-      # when you are on main. Compare against the remote instead, and build
-      # everything when there is no remote branch to compare against yet.
+      # Two things turbo will not do for us. Its default baseline is the `main`
+      # branch, which is nothing at all when you are on main — so compare against
+      # the remote. And root files belong to a package with no build task, so a
+      # change to one of them selects nothing; build everything instead.
       run: |
         if git rev-parse --verify --quiet origin/main > /dev/null; then
-          TURBO_SCM_BASE=origin/main pnpm exec turbo run build --affected
+          BASE=origin/main
         else
           pnpm exec turbo run build
+          exit $?
+        fi
+        if git diff --name-only "$BASE" | grep -qE '^(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|turbo\.json|tsconfig\.base\.json)$'; then
+          pnpm exec turbo run build
+        else
+          TURBO_SCM_BASE="$BASE" pnpm exec turbo run build --affected
         fi
