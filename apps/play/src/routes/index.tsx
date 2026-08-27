@@ -1,6 +1,7 @@
 import { LANGUAGES, LANGUAGE_NAMES, LENGTHS, guessBudget, wordlexDay } from "@wordlex/domain";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { type } from "arktype";
+import { Logo } from "@wordlex/ui/components/logo";
 
 // The Track lives in the URL, which is the reason this app is TanStack Start
 // (ADR 0001). CONTEXT.md avoids "mode", so the length param is spelled out.
@@ -26,7 +27,9 @@ function Home() {
 
   return (
     <main className="mx-auto max-w-xl p-8">
-      <h1 className="text-2xl font-bold">WordleX</h1>
+      <h1>
+        <Logo size={32} />
+      </h1>
       <p className="mt-1 text-sm text-muted-foreground">{wordlexDay()}</p>
 
       <nav className="mt-6 flex flex-wrap gap-3 text-sm">

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" role="img" aria-label="WordleX">
+  <style>
+    /* A favicon cannot read the document, so it follows the OS only — the
+       `data-theme` override in globals.css has no reach here. */
+    .en { fill: #3d7dea }
+    .id { fill: #1fa47a }
+    .su { fill: #b97514 }
+    .jv { fill: #c2429a }
+    @media (prefers-color-scheme: dark) {
+      .en { fill: #5289de }
+      .id { fill: #26a87f }
+      .su { fill: #c08a20 }
+      .jv { fill: #c44e9b }
+    }
+  </style>
+  <rect class="en" x="7.95" y="7.95" width="38.3" height="38.3" rx="7.3" transform="rotate(45 27.1 27.1)"></rect>
+  <rect class="id" x="53.75" y="7.95" width="38.3" height="38.3" rx="7.3" transform="rotate(45 72.9 27.1)"></rect>
+  <rect class="su" x="7.95" y="53.75" width="38.3" height="38.3" rx="7.3" transform="rotate(45 27.1 72.9)"></rect>
+  <rect class="jv" x="53.75" y="53.75" width="38.3" height="38.3" rx="7.3" transform="rotate(45 72.9 72.9)"></rect>
+</svg>
