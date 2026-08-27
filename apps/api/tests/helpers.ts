@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Language, Length } from "@wordlex/domain";
 import { sql } from "drizzle-orm";
 import type { InjectOptions, LightMyRequestResponse } from "fastify";
-import { buildApp } from "../src/app";
+import { buildApp } from "../src/build-app";
 import { db, word } from "../src/db";
 import { signIn } from "./auth";
 import { ORIGIN } from "./config";

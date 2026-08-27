@@ -1,6 +1,6 @@
 import { wordlexDay } from "@wordlex/domain";
 import { describe, expect, it } from "vitest";
-import { buildApp } from "../src/app";
+import { buildApp } from "../src/build-app";
 import { db, game } from "../src/db";
 import { ORIGIN } from "./config";
 import { api, browser, failure } from "./helpers";

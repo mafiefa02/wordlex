@@ -1,4 +1,4 @@
-import { buildApp } from "./app.js";
+import { buildApp } from "./build-app.js";
 import { env } from "./env.js";
 import { logFatalExits } from "./logger.js";
 

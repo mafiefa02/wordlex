@@ -47,7 +47,7 @@ a 409 with `code: "GAME_OVER"` and the finished board at `error.details.game`, s
 client can render the ending without a second round trip. `details` exists for this and
 nothing else does it today. Everywhere else, a failure is a failure and carries no payload.
 
-**Responses no handler wrote are in the envelope too.** `app.ts` sets a not-found handler
+**Responses no handler wrote are in the envelope too.** `build-app.ts` (then named `app.ts`) sets a not-found handler
 and an error handler, because otherwise an unknown route and any uncaught throw answer in
 Fastify's `{ statusCode, error, message }` — and "consistent across every endpoint" is not
 true if the two responses that skip every endpoint are shaped differently. A 5xx says

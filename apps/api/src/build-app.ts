@@ -17,6 +17,12 @@ import { registerMe } from "./me.js";
 /**
  * The whole API, minus listening. Split out so the tests can drive it through
  * `app.inject()` — importing `server.ts` would bind a port.
+ *
+ * **Not named `app.ts`**, which is what it wants to be called. Vercel's Node
+ * runtime picks the deployed entrypoint by filename — `app`, `index` or
+ * `server`, in the package root or `src/` — and `app.ts` won that race over
+ * `server.ts`, so every request reached a module exporting a builder rather
+ * than a server and died on it. The name is what keeps the right file in front.
  */
 export async function buildApp(options: FastifyServerOptions = {}) {
   // `loggerInstance`, not `logger` — Fastify takes a *configuration object*
