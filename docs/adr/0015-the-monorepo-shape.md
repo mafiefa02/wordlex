@@ -8,6 +8,7 @@ One pnpm workspace, driven by Turborepo, holding three apps and one shared packa
 | `apps/play` | TanStack Start, `play.wordlex.com` (ADR 0001) | 3001 |
 | `apps/api` | Fastify, `api.wordlex.com` (ADR 0006) | 4000 |
 | `packages/domain` | The words in CONTEXT.md, as types and functions | — |
+| `packages/ui` | The design system and every shadcn/ui component (ADR 0016) | — |
 
 `packages/domain` ships TypeScript source rather than a build step, so there is no
 compile order to think about. Vite bundles it for `play`; tsup bundles it into

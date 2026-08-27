@@ -31,9 +31,9 @@ function Home() {
   const { lang, length } = Route.useSearch();
 
   return (
-    <main className="mx-auto max-w-xl p-8 font-sans">
+    <main className="mx-auto max-w-xl p-8">
       <h1 className="text-2xl font-bold">WordleX</h1>
-      <p className="mt-1 text-sm text-neutral-600">{wordlexDay()}</p>
+      <p className="text-muted-foreground mt-1 text-sm">{wordlexDay()}</p>
 
       <nav className="mt-6 flex flex-wrap gap-3 text-sm">
         {LANGUAGES.map((language) => (

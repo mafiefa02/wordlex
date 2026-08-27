@@ -1,0 +1,221 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+/* Each app's own files are scanned from where the build runs; this package is not. */
+@source "../**/*.{ts,tsx}";
+
+/*
+  Theme follows the operating system with no JavaScript. `data-theme` on <html>
+  overrides it in either direction, for when there is a manual switch to build.
+*/
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:where(:not([data-theme="light"], [data-theme="light"] *)) {
+      @slot;
+    }
+  }
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+}
+
+@theme inline {
+  --font-sans: "Geist Variable", system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+  --font-heading: var(--font-sans);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* One hue per language, for the contribution graph (ADR 0014). */
+  --color-lang-en: var(--lang-en);
+  --color-lang-id: var(--lang-id);
+  --color-lang-su: var(--lang-su);
+  --color-lang-jv: var(--lang-jv);
+
+  /* Sequential ramp for the contribution graph — shade carries the count. */
+  --color-level-0: var(--level-0);
+  --color-level-1: var(--level-1);
+  --color-level-2: var(--level-2);
+  --color-level-3: var(--level-3);
+  --color-level-4: var(--level-4);
+
+  /* One pair per Mark. Never say green/amber/grey — those are the presentation. */
+  --color-exact: var(--exact);
+  --color-exact-foreground: var(--exact-foreground);
+  --color-present: var(--present);
+  --color-present-foreground: var(--present-foreground);
+  --color-absent: var(--absent);
+  --color-absent-foreground: var(--absent-foreground);
+
+  --color-chart-1: var(--lang-en);
+  --color-chart-2: var(--lang-id);
+  --color-chart-3: var(--lang-su);
+  --color-chart-4: var(--lang-jv);
+  --color-chart-5: var(--level-3);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+:root {
+  color-scheme: light;
+
+  --background: #fbfcfa;
+  --foreground: #16201c;
+  --card: #f2f5f1;
+  --card-foreground: #16201c;
+  --popover: #f2f5f1;
+  --popover-foreground: #16201c;
+  --primary: #17805f;
+  --primary-foreground: #fbfcfa;
+  --secondary: #f2f5f1;
+  --secondary-foreground: #16201c;
+  --muted: #f2f5f1;
+  --muted-foreground: #4a554f;
+  --accent: #e8ebe7;
+  --accent-foreground: #16201c;
+  --destructive: #b4342a;
+  --destructive-foreground: #fbfcfa;
+  --border: #dfe4df;
+  --input: #dfe4df;
+  --ring: #48b892;
+
+  --lang-en: #3d7dea;
+  --lang-id: #1fa47a;
+  --lang-su: #b97514;
+  --lang-jv: #c2429a;
+
+  --level-0: #e8ebe7;
+  --level-1: #c7e8da;
+  --level-2: #8fd3b8;
+  --level-3: #48b892;
+  --level-4: #17805f;
+
+  --exact: #17805f;
+  --exact-foreground: #fbfcfa;
+  --present: #d9a233;
+  --present-foreground: #16201c;
+  --absent: #d5dad6;
+  --absent-foreground: #4a554f;
+
+  --radius: 0.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --background: #131614;
+    --foreground: #e8ede9;
+    --card: #1c201d;
+    --card-foreground: #e8ede9;
+    --popover: #1c201d;
+    --popover-foreground: #e8ede9;
+    --primary: #47c79c;
+    --primary-foreground: #131614;
+    --secondary: #1c201d;
+    --secondary-foreground: #e8ede9;
+    --muted: #1c201d;
+    --muted-foreground: #a3aca7;
+    --accent: #232726;
+    --accent-foreground: #e8ede9;
+    --destructive: #e2705f;
+    --destructive-foreground: #131614;
+    --border: #2a2f2c;
+    --input: #2a2f2c;
+    --ring: #219c77;
+
+    --lang-en: #5289de;
+    --lang-id: #26a87f;
+    --lang-su: #c08a20;
+    --lang-jv: #c44e9b;
+
+    --level-0: #232726;
+    --level-1: #14453a;
+    --level-2: #17654e;
+    --level-3: #219c77;
+    --level-4: #47c79c;
+
+    --exact: #47c79c;
+    --exact-foreground: #131614;
+    --present: #c08a20;
+    --present-foreground: #131614;
+    --absent: #2f3633;
+    --absent-foreground: #a3aca7;
+  }
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --background: #131614;
+  --foreground: #e8ede9;
+  --card: #1c201d;
+  --card-foreground: #e8ede9;
+  --popover: #1c201d;
+  --popover-foreground: #e8ede9;
+  --primary: #47c79c;
+  --primary-foreground: #131614;
+  --secondary: #1c201d;
+  --secondary-foreground: #e8ede9;
+  --muted: #1c201d;
+  --muted-foreground: #a3aca7;
+  --accent: #232726;
+  --accent-foreground: #e8ede9;
+  --destructive: #e2705f;
+  --destructive-foreground: #131614;
+  --border: #2a2f2c;
+  --input: #2a2f2c;
+  --ring: #219c77;
+
+  --lang-en: #5289de;
+  --lang-id: #26a87f;
+  --lang-su: #c08a20;
+  --lang-jv: #c44e9b;
+
+  --level-0: #232726;
+  --level-1: #14453a;
+  --level-2: #17654e;
+  --level-3: #219c77;
+  --level-4: #47c79c;
+
+  --exact: #47c79c;
+  --exact-foreground: #131614;
+  --present: #c08a20;
+  --present-foreground: #131614;
+  --absent: #2f3633;
+  --absent-foreground: #a3aca7;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}

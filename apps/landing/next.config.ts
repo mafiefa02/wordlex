@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // The UI package ships TypeScript source rather than a build step.
+  transpilePackages: ["@wordlex/ui"],
 };
 
 export default nextConfig;
