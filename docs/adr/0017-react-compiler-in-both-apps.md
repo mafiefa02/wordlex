@@ -20,7 +20,7 @@ slot memo cache. With it off, the same component comes out untouched. In
 `apps/landing` a throwaway client component compiled to the array-cache form with
 the flag on and not without it.
 
-Two things that surprised us and are worth knowing before someone re-checks:
+Three things that surprised us and are worth knowing before someone re-checks:
 
 - The compiled marker does not survive minification under the name you would grep
   for. Look for the string `react.memo_cache_sentinel`, or build unminified.

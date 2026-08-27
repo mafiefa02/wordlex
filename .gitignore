@@ -14,7 +14,7 @@ dist/
 .env
 .env.local
 
-# Downloaded word-list sources, re-fetched by scripts/build-review-lists.mjs
+# Word-list sources, downloaded by the review-list script (removed — see ba775eb)
 data/.cache/
 
 # Vendored agent skills, restored from skills-lock.json

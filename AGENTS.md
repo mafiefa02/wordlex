@@ -21,8 +21,12 @@ Three rules worth knowing before you edit:
   packages/ui`, and use the design system's tokens rather than raw Tailwind
   colours (ADR 0016).
 
-`pnpm build`, `pnpm check-types`, `pnpm test`, `pnpm lint`, `pnpm format`. Commits
-and pushes run lefthook hooks that do the same.
+`pnpm build`, `pnpm check-types`, `pnpm test`, `pnpm lint`, `pnpm format`.
+
+The lefthook hooks are narrower than that list: committing formats and lints the
+staged files, pushing builds the affected packages. **Nothing runs `pnpm test` or
+`pnpm check-types` for you** — a broken test or a type error in `apps/play` will
+commit and push clean. Run them yourself before you call work done.
 
 <!-- intent-skills:start -->
 ## Skill Loading
