@@ -1,0 +1,24 @@
+{
+  "name": "@wordlex/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/server.ts",
+    "build": "tsup",
+    "start": "node dist/server.js",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.3.0",
+    "@wordlex/domain": "workspace:*",
+    "arktype": "^2.2.3",
+    "fastify": "^5.12.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.2",
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.12",
+    "typescript": "^6.0.3"
+  }
+}
