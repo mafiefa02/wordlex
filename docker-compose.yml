@@ -22,5 +22,31 @@ services:
       timeout: 5s
       retries: 10
 
+  # The test database, which `pnpm --filter @wordlex/api test` migrates from
+  # scratch and truncates between tests. A second container rather than a second
+  # database in the first one, for two reasons: the suite truncates tables, and
+  # pointing that at the container you develop against would eat your data — and
+  # `POSTGRES_DB` below cannot be anything else. pg_cron installs into exactly
+  # one database, named at server start, and migration 0000 creates it, so a
+  # database called `wordlex_test` makes `db:migrate` hang on that statement.
+  #
+  # No volume: the data directory is a tmpfs, so the container starts empty every
+  # time and the suite's migrations are always the ones being tested.
+  db-test:
+    image: supabase/postgres:17.6.1.166
+    container_name: wordlex-db-test
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 volumes:
   wordlex-db:

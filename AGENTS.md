@@ -24,9 +24,11 @@ Three rules worth knowing before you edit:
 `pnpm build`, `pnpm check-types`, `pnpm test`, `pnpm lint`, `pnpm format`.
 
 The lefthook hooks are narrower than that list: committing formats and lints the
-staged files, pushing builds the affected packages. **Nothing runs `pnpm test` or
-`pnpm check-types` for you** — a broken test or a type error in `apps/play` will
-commit and push clean. Run them yourself before you call work done.
+staged files, pushing builds the affected packages and runs every test.
+`apps/api`'s suite needs the `db-test` container — `docker compose up -d --wait
+db-test` — and says so when it is missing. **Nothing runs `pnpm check-types` for
+you**, so a type error in `apps/play` will still commit and push clean. Run it
+yourself before you call work done.
 
 <!-- intent-skills:start -->
 ## Skill Loading

@@ -16,8 +16,10 @@ pnpm --filter @wordlex/api db:seed
 pnpm dev
 ```
 
-`docker compose` runs one Postgres container on Supabase's image, so `pg_cron`
-is the same one production has (ADR 0019).
+`docker compose` runs two Postgres containers on Supabase's image, so `pg_cron`
+is the same one production has (ADR 0019). `db` on 5432 is the one you develop
+against; `db-test` on 5433 is the one `apps/api`'s tests migrate and truncate,
+and it keeps its data in a tmpfs so every run starts from an empty database.
 
 - Landing page — http://localhost:3000
 - Play — http://localhost:3001
@@ -29,8 +31,8 @@ repo in one pass rather than per package.
 
 Git hooks are lefthook's, installed by `pnpm install`. Committing formats and
 lints the staged files; pushing builds whichever packages the outgoing commits
-touch. Markdown is deliberately left unformatted, so the ADRs keep their
-hand-wrapped prose.
+touch and runs every test, which needs `db-test` to be up. Markdown is
+deliberately left unformatted, so the ADRs keep their hand-wrapped prose.
 
 ## Layout
 

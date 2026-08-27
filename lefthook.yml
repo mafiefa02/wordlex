@@ -1,6 +1,7 @@
 # Formatting and linting are file-scoped, so they run on exactly what is staged.
 # The build is package-scoped, so it runs on whichever packages have changed —
-# committed or not — plus anything that depends on them.
+# committed or not — plus anything that depends on them. The tests are not
+# scoped at all: there are two suites and they take three seconds together.
 
 pre-commit:
   parallel: false
@@ -47,3 +48,12 @@ pre-push:
         else
           TURBO_SCM_BASE="$BASE" pnpm exec turbo run build --affected
         fi
+
+    - name: test
+      # Never `--affected`, and never cached: `apps/api`'s suite talks to a real
+      # database and is scored against whatever `wordlex_day()` says right now,
+      # so a run that passed yesterday is not evidence about today.
+      # `packages/domain`'s is pure and could be cached; one rule is simpler
+      # than two. It needs the `db-test` container up —
+      # `docker compose up -d --wait db-test`.
+      run: pnpm exec turbo run test

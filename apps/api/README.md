@@ -35,6 +35,36 @@ Without it the Game token is `Secure` over `http://localhost`. Chrome and
 Firefox allow that; Safari drops the cookie, so every Guess returns 401 with
 nothing to say why. The server logs which way it resolved at boot.
 
+## Tests
+
+```sh
+docker compose -f ../../docker-compose.yml up -d --wait db-test
+pnpm test
+```
+
+`db-test` is a second container on 5433, and the suite refuses to run on 5432 —
+it truncates every table before each test, and one exported `DATABASE_URL`
+pointing at the container you develop against would empty it instead.
+`tests/setup-env.ts` overwrites the connection unconditionally for the same
+reason, and `tests/config.ts` is the only place the URL is written down.
+
+It is a second *container* and not a second database because migration `0000`
+creates `pg_cron`, which installs into exactly one database named at server
+start — the same trap the section below describes. Its data directory is a
+tmpfs, so every run migrates `drizzle/` from nothing, which is the point: the
+migrations are part of what is under test.
+
+The tests drive the app through `app.inject()` rather than a port, which is why
+`buildApp()` lives in `src/app.ts` and `src/server.ts` is four lines. Each
+Track's Answer Pool is seeded with exactly one word, so `random()` in
+`wordlex_issue_daily` has nothing to choose between and today's Answer is known
+before a test starts. `browser()` in `tests/helpers.ts` keeps the Game token the
+API sets and sends it back, since a Game is resumable by nothing else.
+
+`turbo run test` never caches this: the suite needs a live database, and both it
+and `packages/domain`'s cross the 00:00 WIB boundary, so yesterday's pass is not
+evidence about today.
+
 ## The guess path
 
 `POST /game` with `{ language, length }` is what pressing Play calls. It starts an
