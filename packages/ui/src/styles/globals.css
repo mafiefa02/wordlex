@@ -24,6 +24,18 @@
   }
 }
 
+/*
+  Reveal-on-hover has to be gated on the pointer, not only styled for `:hover`.
+  Where there is no hover the revealed content must simply be there — hiding it
+  at rest would put it out of reach on a phone. Tailwind's own `hover:` is
+  already scoped this way; this is for the *resting* half of such a pair.
+*/
+@custom-variant pointer-fine {
+  @media (hover: hover) and (pointer: fine) {
+    @slot;
+  }
+}
+
 @theme inline {
   --font-sans: "Geist Variable", system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
@@ -76,6 +88,10 @@
   --color-chart-4: var(--lang-jv);
   --color-chart-5: var(--level-3);
 
+  /* The built-in ease-out is too weak to read at the 200-300ms an entrance
+     runs for. Same shape, steeper. */
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -85,25 +101,25 @@
 :root {
   color-scheme: light;
 
-  --background: #fbfcfa;
-  --foreground: #16201c;
-  --card: #f2f5f1;
-  --card-foreground: #16201c;
-  --popover: #f2f5f1;
-  --popover-foreground: #16201c;
-  --primary: #17805f;
-  --primary-foreground: #fbfcfa;
-  --secondary: #f2f5f1;
-  --secondary-foreground: #16201c;
-  --muted: #f2f5f1;
-  --muted-foreground: #4a554f;
-  --accent: #e8ebe7;
-  --accent-foreground: #16201c;
-  --destructive: #b4342a;
-  --destructive-foreground: #fbfcfa;
-  --border: #dfe4df;
-  --input: #dfe4df;
-  --ring: #48b892;
+  --background: oklch(100% 0 0);
+  --foreground: oklch(14.1% 0.005 285.823);
+  --card: oklch(100% 0 0);
+  --card-foreground: oklch(14.1% 0.005 285.823);
+  --popover: oklch(100% 0 0);
+  --popover-foreground: oklch(14.1% 0.005 285.823);
+  --primary: oklch(21% 0.006 285.885);
+  --primary-foreground: oklch(98.5% 0 none);
+  --secondary: oklch(96.7% 0.001 286.375);
+  --secondary-foreground: oklch(21% 0.006 285.885);
+  --muted: oklch(96.7% 0.001 286.375);
+  --muted-foreground: oklch(55.2% 0.016 285.938);
+  --accent: oklch(96.7% 0.001 286.375);
+  --accent-foreground: oklch(21% 0.006 285.885);
+  --destructive: oklch(57.7% 0.245 27.325);
+  --destructive-foreground: oklch(98.5% 0 none);
+  --border: oklch(92% 0.004 286.32);
+  --input: oklch(92% 0.004 286.32);
+  --ring: oklch(70.5% 0.015 286.067);
 
   --lang-en: #3d7dea;
   --lang-id: #1fa47a;
@@ -131,25 +147,25 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --background: #131614;
-    --foreground: #e8ede9;
-    --card: #1c201d;
-    --card-foreground: #e8ede9;
-    --popover: #1c201d;
-    --popover-foreground: #e8ede9;
-    --primary: #47c79c;
-    --primary-foreground: #131614;
-    --secondary: #1c201d;
-    --secondary-foreground: #e8ede9;
-    --muted: #1c201d;
-    --muted-foreground: #a3aca7;
-    --accent: #232726;
-    --accent-foreground: #e8ede9;
-    --destructive: #e2705f;
-    --destructive-foreground: #131614;
-    --border: #2a2f2c;
-    --input: #2a2f2c;
-    --ring: #219c77;
+    --background: oklch(14.1% 0.005 285.823);
+    --foreground: oklch(98.5% 0 none);
+    --card: oklch(21% 0.006 285.885);
+    --card-foreground: oklch(98.5% 0 none);
+    --popover: oklch(21% 0.006 285.885);
+    --popover-foreground: oklch(98.5% 0 none);
+    --primary: oklch(92% 0.004 286.32);
+    --primary-foreground: oklch(21% 0.006 285.885);
+    --secondary: oklch(27.4% 0.006 286.033);
+    --secondary-foreground: oklch(98.5% 0 none);
+    --muted: oklch(27.4% 0.006 286.033);
+    --muted-foreground: oklch(70.5% 0.015 286.067);
+    --accent: oklch(27.4% 0.006 286.033);
+    --accent-foreground: oklch(98.5% 0 none);
+    --destructive: oklch(70.4% 0.191 22.216);
+    --destructive-foreground: oklch(14.1% 0.005 285.823);
+    --border: oklch(100% 0 0 / 10%);
+    --input: oklch(100% 0 0 / 15%);
+    --ring: oklch(55.2% 0.016 285.938);
 
     --lang-en: #5289de;
     --lang-id: #26a87f;
@@ -175,25 +191,25 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --background: #131614;
-  --foreground: #e8ede9;
-  --card: #1c201d;
-  --card-foreground: #e8ede9;
-  --popover: #1c201d;
-  --popover-foreground: #e8ede9;
-  --primary: #47c79c;
-  --primary-foreground: #131614;
-  --secondary: #1c201d;
-  --secondary-foreground: #e8ede9;
-  --muted: #1c201d;
-  --muted-foreground: #a3aca7;
-  --accent: #232726;
-  --accent-foreground: #e8ede9;
-  --destructive: #e2705f;
-  --destructive-foreground: #131614;
-  --border: #2a2f2c;
-  --input: #2a2f2c;
-  --ring: #219c77;
+  --background: oklch(14.1% 0.005 285.823);
+  --foreground: oklch(98.5% 0 none);
+  --card: oklch(21% 0.006 285.885);
+  --card-foreground: oklch(98.5% 0 none);
+  --popover: oklch(21% 0.006 285.885);
+  --popover-foreground: oklch(98.5% 0 none);
+  --primary: oklch(92% 0.004 286.32);
+  --primary-foreground: oklch(21% 0.006 285.885);
+  --secondary: oklch(27.4% 0.006 286.033);
+  --secondary-foreground: oklch(98.5% 0 none);
+  --muted: oklch(27.4% 0.006 286.033);
+  --muted-foreground: oklch(70.5% 0.015 286.067);
+  --accent: oklch(27.4% 0.006 286.033);
+  --accent-foreground: oklch(98.5% 0 none);
+  --destructive: oklch(70.4% 0.191 22.216);
+  --destructive-foreground: oklch(14.1% 0.005 285.823);
+  --border: oklch(100% 0 0 / 10%);
+  --input: oklch(100% 0 0 / 15%);
+  --ring: oklch(55.2% 0.016 285.938);
 
   --lang-en: #5289de;
   --lang-id: #26a87f;

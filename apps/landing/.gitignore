@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# The example is not a real env file — it is how the next person learns what to set.
+!.env.example

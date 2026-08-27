@@ -1,1 +1,36 @@
 @import "@wordlex/ui/globals.css";
+
+/*
+  The hero's Tiles take their Mark at the midpoint of their own flip, the way
+  the board does. Both halves live in one keyframe, so there is no timer per
+  Tile and nothing left scheduled once it has run.
+*/
+@theme {
+  --animate-field-flip: field-flip 520ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@keyframes field-flip {
+  0% {
+    transform: rotateX(0deg);
+    border-color: var(--border);
+    background-color: transparent;
+    color: var(--foreground);
+  }
+  49.9% {
+    border-color: var(--border);
+    background-color: transparent;
+    color: var(--foreground);
+  }
+  50% {
+    transform: rotateX(90deg);
+    border-color: transparent;
+    background-color: var(--mark-bg);
+    color: var(--mark-fg);
+  }
+  100% {
+    transform: rotateX(0deg);
+    border-color: transparent;
+    background-color: var(--mark-bg);
+    color: var(--mark-fg);
+  }
+}

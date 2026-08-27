@@ -1,5 +1,21 @@
 # One UI package, shadcn/ui on Base UI, and a palette carried by lightness
 
+> **Amended 2026-08-28.** The shadcn slot tokens are now shadcn's own zinc
+> default: neutral greys, and a `--primary` that is near black in light and near
+> white in dark. Everything below about *where* the palette lives still holds —
+> one package, one set of tokens, both apps. What changed is that the green from
+> ADR 0014's mock is no longer the brand colour.
+>
+> The reason is that the green competed with the four language hues. Those hues
+> are the product, and the brand mark is made of them, so the chrome around them
+> should be quiet. Neutral chrome makes them the only saturated thing on screen.
+>
+> `--lang-en/id/su/jv`, the `--level-0..4` ramp and the three Mark pairs are
+> **unchanged**, so ADR 0014's validation and the Mark lightness steps below
+> still stand. Two loose ends this leaves: `--level-0` and `--absent` were picked
+> against the old green-tinted greys and now read slightly warm beside zinc.
+> Nothing renders either one yet, so re-tuning them belongs with the board.
+
 `packages/ui` holds the design system: the token file, the `cn` helper, and every
 shadcn/ui component. Both apps depend on it, so there is one palette rather than
 one per app. Components are shadcn/ui built on **Base UI** — the components are
