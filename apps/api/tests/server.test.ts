@@ -12,7 +12,7 @@ describe("the server", () => {
   // ever exercises the logger the deployed server actually uses. It was wrong
   // once, and the only symptom was the process refusing to start.
   it("boots with its own logger", async () => {
-    const app = await configureApp(Fastify({ logger: { level: LOG_LEVEL } }));
+    const app = configureApp(Fastify({ logger: { level: LOG_LEVEL } }));
     await app.ready();
     await app.close();
   });

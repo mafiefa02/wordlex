@@ -13,7 +13,7 @@ import { ORIGIN } from "./config";
  * instance for the whole run: it holds no state of its own, and everything a
  * test needs to vary lives in the database or in a cookie.
  */
-export const api = await configureApp(Fastify({ logger: false }));
+export const api = configureApp(Fastify({ logger: false }));
 
 type Seed = {
   language: Language;

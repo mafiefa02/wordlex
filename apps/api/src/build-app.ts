@@ -30,13 +30,18 @@ import { registerMe } from "./me.js";
  * a module exporting a builder rather than a server. The name keeps the right
  * file in front.
  */
-export async function configureApp(app: FastifyInstance) {
-  await app.register(cors, {
+export function configureApp(app: FastifyInstance) {
+  // Not awaited, and deliberately: Fastify defers plugin loading to `ready()`,
+  // so this whole function stays synchronous. Vercel captures the deployed
+  // server by watching the `listen` call during module startup, and a top-level
+  // await before it is the difference between a server it finds and one it does
+  // not.
+  app.register(cors, {
     origin: env.allowedOrigins,
     credentials: true,
   });
 
-  await app.register(cookie, { secret: env.cookieSecret });
+  app.register(cookie, { secret: env.cookieSecret });
 
   // Nothing here is cacheable. Every response is either per-cookie or carries the
   // day's Answer once a Game is over, and that is as true of the POST bodies as it
