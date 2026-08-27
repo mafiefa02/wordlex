@@ -16,3 +16,7 @@ dist/
 
 # Downloaded word-list sources, re-fetched by scripts/build-review-lists.mjs
 data/.cache/
+
+# Vendored agent skills, restored from skills-lock.json
+.agents/skills/
+.claude/skills/
