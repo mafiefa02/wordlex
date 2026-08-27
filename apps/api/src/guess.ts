@@ -2,6 +2,7 @@ import { guessBudget, LANGUAGES, LENGTHS, score } from "@wordlex/domain";
 import { type } from "arktype";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { awardBadges, type EarnedBadge } from "./badges";
 import { type Board, readBoard, todaysDaily } from "./board";
 import { db, game, guess, unknownWordAttempt, word } from "./db";
 import { type ApiResponse, fail, idempotencyKey } from "./http";
@@ -36,7 +37,17 @@ const fold = (input: string) =>
  * scored Guess is already in the board.
  */
 type Submitted =
-  | { outcome: "scored"; game: Board }
+  | {
+      outcome: "scored";
+      game: Board;
+      /**
+       * Badges this Guess earned, present only on the one that ended the Game and
+       * only for a signed-in Player (ADR 0011). A retry of that Guess replays the
+       * board without them, which is why `GET /me` carries every Badge with a null
+       * `seenAt` too — the toast has a second source, not a single delivery.
+       */
+      badges?: EarnedBadge[];
+    }
   | { outcome: "unknown_word"; word: string; game: Board };
 
 /** Everything this route can send. See `Sent` in `daily.ts` (ADR 0023). */
@@ -223,10 +234,21 @@ export function registerGuess(app: FastifyInstance) {
         await tx.update(game).set({ status }).where(eq(game.id, current.id));
       }
 
+      // A finished Game is the only thing that can change the earned set, and an
+      // anonymous one has nobody to award to (ADR 0022). Inside the transaction,
+      // so a Badge is never awarded for a Guess that rolled back.
+      const badges =
+        status !== "playing" && current.playerId ? await awardBadges(tx, current.playerId) : [];
+
       // Read back rather than appending locally, so the response is what was
       // actually written and both routes build a board exactly one way.
       const after = await readBoard(tx, today, { id: current.id, status });
-      return { code: 200, body: { data: { outcome: "scored", game: after } } };
+      return {
+        code: 200,
+        body: {
+          data: { outcome: "scored", game: after, ...(badges.length > 0 ? { badges } : {}) },
+        },
+      };
     });
 
     return reply.code(result.code).send(result.body);

@@ -1,5 +1,12 @@
 # Badges reward breadth and persistence, not speed or skill
 
+_Amended: the twelve Badges now exist. Their ids and the predicates that earn them are in
+`apps/api/src/badges.ts`, their copy is rows written by a migration, and a test checks the two
+lists have not drifted. Every predicate is re-asked over the Player's whole history whenever a
+Game finishes, so a Badge added later still awards retroactively — and by ADR 0026 the ones
+counting breadth only look at Games with a Guess in them, or four Play presses would earn
+"Four Languages"._
+
 _Decided during the design session; written up afterwards, which is why the ADR that depends on it (0010) is numbered before it._
 
 _Amended: Badges are derived from Game rows as described, but a small `badge_award` ledger is

@@ -2,9 +2,11 @@ import { LANGUAGES, LENGTHS } from "@wordlex/domain";
 import { type } from "arktype";
 import { and, count, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { accountFromRequest } from "./account";
 import { type Board, type Daily, readBoard, todaysDaily } from "./board";
 import { db, game, guess } from "./db";
 import { type ApiResponse, fail, idempotencyKey } from "./http";
+import { playerFor } from "./player";
 import { gameFromToken, setGameToken } from "./session";
 
 const Body = type({
@@ -34,7 +36,9 @@ export function registerGame(app: FastifyInstance) {
    * it can only be told.
    *
    * A browser that *discarded* its token can still start again, which is why
-   * replaying a Daily anonymously is free (ADR 0022).
+   * replaying a Daily anonymously is free (ADR 0022). A signed-in Player cannot:
+   * their Game is found by who they are, so a lost token resumes the same Game
+   * on any device rather than starting a second one (ADR 0025).
    */
   app.post("/game", async (request, reply) => {
     const body = Body(request.body);
@@ -55,6 +59,7 @@ export function registerGame(app: FastifyInstance) {
     }
 
     const { language, length } = body;
+    const account = await accountFromRequest(request);
 
     let issued: { today: Daily; gameId: string } | undefined;
     const result = await db.transaction(async (tx): Promise<Sent> => {
@@ -69,8 +74,28 @@ export function registerGame(app: FastifyInstance) {
         };
       }
 
-      const resumed = await gameFromToken(tx, request, today);
+      // Who the request is decides what a resume even means. A signed-in Player
+      // has at most one Game per Daily and it is found by their Player id, so
+      // the token is a convenience they can lose. An anonymous Player *is* their
+      // token, and nothing else can name their Game (ADR 0022).
+      const playerId = account ? await playerFor(tx, account.id) : undefined;
+
+      const resumed = playerId
+        ? (
+            await tx
+              .select({ id: game.id, status: game.status })
+              .from(game)
+              .where(and(eq(game.playerId, playerId), eq(game.dailyId, today.id)))
+              .limit(1)
+          )[0]
+        : await gameFromToken(tx, request, today);
+
       if (resumed) {
+        // Only the signed-in half needs a token here: it was found by who they
+        // are, so this may be a device that holds none. An anonymous resume was
+        // found *by* the token it already sent, and re-setting it would write
+        // back the same value with the same expiry.
+        if (playerId) issued = { today, gameId: resumed.id };
         return { code: 200, body: { data: { game: await readBoard(tx, today, resumed) } } };
       }
 
@@ -79,12 +104,18 @@ export function registerGame(app: FastifyInstance) {
       // a winner between two starts arriving together (ADR 0024). Reading first
       // and inserting after would let both read "no Game" and both insert.
       //
-      // `playerId` stays null: this is an anonymous Game, and that null is what
-      // every review query filters on (ADRs 0009 and 0012).
+      // `playerId` is null for an anonymous Game, and that null is what every
+      // review query filters on (ADRs 0009 and 0012).
+      //
+      // The conflict is untargeted because a signed-in Player can hit either
+      // unique: `game_daily_idempotency_key` from their own double press, and
+      // `game_player_daily_key` from two presses under *different* keys. An
+      // anonymous Player can only ever hit the first, since Postgres treats
+      // their null `player_id` as distinct from every other.
       const [started] = await tx
         .insert(game)
-        .values({ dailyId: today.id, idempotencyKey: key })
-        .onConflictDoNothing({ target: [game.dailyId, game.idempotencyKey] })
+        .values({ dailyId: today.id, idempotencyKey: key, playerId })
+        .onConflictDoNothing()
         .returning({ id: game.id, status: game.status });
 
       // Nothing inserted means this key already named a Game — our own retry, or
@@ -97,19 +128,36 @@ export function registerGame(app: FastifyInstance) {
           await tx
             .select({ id: game.id, status: game.status })
             .from(game)
-            .where(and(eq(game.dailyId, today.id), eq(game.idempotencyKey, key)))
+            .where(
+              playerId
+                ? and(eq(game.playerId, playerId), eq(game.dailyId, today.id))
+                : and(eq(game.dailyId, today.id), eq(game.idempotencyKey, key)),
+            )
             .limit(1)
         )[0];
-      if (!claimed) throw new Error("an Idempotency-Key claimed no Game and conflicted with none");
+
+      if (!claimed) {
+        // Only reachable signed in, and only one way: the key already names
+        // somebody else's Game on this Daily. Anonymously the same lookup is the
+        // one the conflict was on, so nothing can conflict and then be missing.
+        if (!playerId)
+          throw new Error("an Idempotency-Key claimed no Game and conflicted with none");
+        return {
+          code: 422,
+          body: fail("IDEMPOTENCY_KEY_REUSED", "this Idempotency-Key names another Player's Game"),
+        };
+      }
 
       // Second layer under the uuid requirement in `http.ts`, and worth the four
       // lines: handing back a Game means handing back its token, so a key that
-      // leaks is a Game anyone can take over. A genuine retry cannot have played
+      // leaks is a Game anyone can take over. Anonymous play only: a signed-in
+      // Player's claim on their Game is the session, not the key, and resuming a
+      // Game they have already played is the point rather than a warning sign. A genuine retry cannot have played
       // anything — it never received the token a Guess needs — so a Game with
       // Guesses in it is somebody's, and this is not the lost response it claims
       // to be. Refusing shrinks the window on a leaked or guessed key from the
       // rest of the day to the moment before its first Guess.
-      if (started === undefined) {
+      if (started === undefined && !playerId) {
         const [played] = await tx
           .select({ made: count() })
           .from(guess)

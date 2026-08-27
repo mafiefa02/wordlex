@@ -1,5 +1,14 @@
 # Answer Pools ship unreviewed and are cleaned from play data
 
+_Amended: the Solve Rate denominator, left open here and reopened by ADR 0022, is now
+decided. A word's Solve Rate is Games **won** over Games **finished**, and it **counts
+anonymous Games**. Games that ended `abandoned` are excluded, which by ADR 0026 includes
+every Game nobody typed into. Anonymous evidence is easier to manufacture than signed-in
+evidence — ADR 0022 says how — but excluding it at launch would leave almost every Track
+with no evidence at all, and `game.player_id is null` stays visible so a reviewer looking at
+a suspicious word can still split the two. Neither signal removes a word on its own, which
+is what makes that trade affordable._
+
 No human reads the Answer Pools before launch. They ship as derived in ADR 0004 — frequency-cut for English and Indonesian, Indonesian-subtracted for Sundanese and Javanese — and we clean them afterwards using signals from real play.
 
 This is a deliberate risk. ADR 0005 made Daily-only the whole game, so a bad Answer is not a mildly obscure word someone shrugs at: it ruins that day for everyone on that Track, with no second Game to redeem it. We know words like `afiun`, `anbiya`, `arakian` and `apngal` are still in there.

@@ -1,5 +1,8 @@
 # Every Player is a row, and merging runs on sign-in as well as sign-up
 
+_Amended again: ADR 0027 decides what the merge carries. Today's Games and nothing else, with
+the collision rule below unchanged and `unknown_word_attempt` deliberately left where it is._
+
 _Amended: ADR 0022 removes the anonymous Player, so the merge no longer has an anonymous
 side to run. `badge_award` in particular can never hold an anonymous row. The
 collision-then-repoint rule below still applies to whatever a future slice does decide to

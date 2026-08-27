@@ -1,4 +1,4 @@
-import type { FastifyRequest } from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 
 /**
  * The one shape every response takes. Successes are `{ data }`, failures are
@@ -46,6 +46,8 @@ export type ErrorCode =
   | "REQUEST_REJECTED"
   /** 401 — no Game token for this Track and today's Daily. */
   | "NO_GAME_TOKEN"
+  /** 401 — the route is a Player's own history, and nobody is signed in. */
+  | "NOT_SIGNED_IN"
   /** 403 — a write with a missing or non-allowlisted `Origin`. */
   | "ORIGIN_NOT_ALLOWED"
   /** 404 — no such route. */
@@ -89,4 +91,17 @@ const KEY = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function idempotencyKey(request: FastifyRequest): string | undefined {
   const sent = request.headers["idempotency-key"];
   return typeof sent === "string" && KEY.test(sent) ? sent : undefined;
+}
+
+/**
+ * Says the response body depends on the cookies that were sent. Every GET here
+ * is per-Player: the board changes with the Game token, the profile with the
+ * session.
+ *
+ * Appended rather than set, because @fastify/cors has already put `Vary: Origin`
+ * here from an onRequest hook and `reply.header` replaces.
+ */
+export function varyOnCookie(reply: FastifyReply) {
+  const vary = reply.getHeader("Vary");
+  reply.header("Vary", vary === undefined ? "Cookie" : `${String(vary)}, Cookie`);
 }

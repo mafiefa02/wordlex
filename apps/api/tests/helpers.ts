@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import type { InjectOptions, LightMyRequestResponse } from "fastify";
 import { buildApp } from "../src/app";
 import { db, word } from "../src/db";
+import { signIn } from "./auth";
 import { ORIGIN } from "./config";
 
 /**
@@ -58,7 +59,8 @@ export const WRONG_EN5 = ["creak", "sells", "sassy", "beast", "humid", "seven"];
  */
 export async function resetDatabase() {
   await db.execute(
-    sql`truncate table word, daily, game, guess, unknown_word_attempt, badge_award, player cascade`,
+    sql`truncate table word, daily, game, guess, unknown_word_attempt, badge_award, player,
+        "user", session, account, verification cascade`,
   );
   await db.insert(word).values(
     WORDS.map((row) => ({
@@ -92,6 +94,15 @@ export function browser() {
 
   return {
     cookies,
+    /**
+     * Signs in, from this browser, carrying whatever Game tokens it already
+     * holds — which is the whole of what ADR 0027 carries over.
+     */
+    signIn: async (as?: string) => {
+      const session = await signIn(cookies, as);
+      Object.assign(cookies, session.cookies);
+      return session;
+    },
     get: (url: string) => send({ method: "GET", url }),
     post: (
       url: string,

@@ -15,3 +15,13 @@ export const ORIGIN = "http://localhost:3001";
 
 /** COOKIE_SECRET has to be at least 32 characters, and this is not a secret. */
 export const COOKIE_SECRET = "wordlex-test-cookie-secret-0123456789";
+
+/** BETTER_AUTH_SECRET has the same 32-character floor, and is not a secret either. */
+export const AUTH_SECRET = "wordlex-test-auth-secret-0123456789";
+
+/**
+ * What better-auth thinks it is serving. Nothing in the suite reaches Google, so
+ * this only has to be a URL — but it is the base every auth URL is built on, so
+ * it has to be the same one in both auth instances.
+ */
+export const AUTH_URL = "http://localhost:4000";

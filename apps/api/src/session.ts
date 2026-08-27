@@ -1,4 +1,5 @@
-import { dayEndsAt, type Language, type Length } from "@wordlex/domain";
+import { fastifyCookie, signerFactory } from "@fastify/cookie";
+import { dayEndsAt, type Language, type Length, TRACKS } from "@wordlex/domain";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { Daily } from "./board";
@@ -18,6 +19,33 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
  * combined cookie would be rewritten on every Guess on any Track.
  */
 const cookieName = (language: Language, length: Length) => `wordlex_game_${language}_${length}`;
+
+/**
+ * The same secret @fastify/cookie was registered with, as a standalone signer.
+ * Sign-in reads these cookies from a raw header rather than from a
+ * `FastifyRequest` — better-auth hands its hooks the headers it was called with,
+ * not Fastify's request — so `request.unsignCookie` is not available there.
+ */
+const signer = signerFactory(env.cookieSecret);
+
+/**
+ * Every Game this browser holds a token for, across all twelve Tracks. What
+ * signing in carries over is drawn from exactly this (ADR 0027): a token is the
+ * only claim an anonymous Game has, so a Game nobody holds a token for is
+ * nobody's to take.
+ */
+export function gameIdsFromCookieHeader(header: string | undefined | null): string[] {
+  if (!header) return [];
+  const jar = fastifyCookie.parse(header);
+  return TRACKS.flatMap(({ language, length }) => {
+    const signed = jar[cookieName(language, length)];
+    if (signed === undefined) return [];
+    const unsigned = signer.unsign(signed);
+    return unsigned.valid && unsigned.value !== null && UUID.test(unsigned.value)
+      ? [unsigned.value]
+      : [];
+  });
+}
 
 /**
  * The Game this browser holds a token for on this Track, if that token is one we

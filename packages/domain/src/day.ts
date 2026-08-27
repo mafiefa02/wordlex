@@ -24,3 +24,15 @@ export function dayStartsAt(day: WordlexDay): Date {
 export function dayEndsAt(day: WordlexDay): Date {
   return new Date(dayStartsAt(day).getTime() + 24 * 60 * 60 * 1000);
 }
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** The WordleX Day before this one. */
+export function previousDay(day: WordlexDay): WordlexDay {
+  return new Date(Date.parse(`${day}T00:00:00Z`) - DAY_MS).toISOString().slice(0, 10);
+}
+
+/** The WordleX Day after this one. */
+export function nextDay(day: WordlexDay): WordlexDay {
+  return new Date(Date.parse(`${day}T00:00:00Z`) + DAY_MS).toISOString().slice(0, 10);
+}

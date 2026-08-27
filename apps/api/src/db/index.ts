@@ -14,4 +14,12 @@ export const db = drizzle(client, { schema: { ...schema, ...authSchema } });
 /** What `db.transaction` hands its callback. Every query outside a route takes one. */
 export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
+/**
+ * Either connection a query can run on. Almost everything takes a `Transaction`,
+ * because almost everything is one step of several that have to agree. The two
+ * that do not are the sign-in steps, which are deliberately separate so that one
+ * failing does not undo the other (ADR 0027).
+ */
+export type Queryable = typeof db | Transaction;
+
 export * from "./schema";

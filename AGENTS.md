@@ -16,13 +16,18 @@ Four rules worth knowing before you edit:
 - The Dictionary and Answer Pool belong to `apps/api`. Nothing importable by the
   browser may ever hold them (ADR 0003).
 - Streaks, Candidate counts and Answer quality are derived by query, never stored
-  as counters (ADRs 0008, 0009, 0012).
+  as counters (ADRs 0008, 0009, 0012). A Streak is consecutive WordleX Days with a
+  win on any Track (ADR 0026); Badges are predicates re-asked over a Player's whole
+  history, so `badge_award` is a cache and never the source of truth (ADR 0011).
 - UI components go in `packages/ui` via `pnpm dlx shadcn@latest add <name> -c
   packages/ui`, and use the design system's tokens rather than raw Tailwind
   colours (ADR 0016).
 - Every API response is `{ data }` or `{ error: { code, message } }`, with the
   codes in `apps/api/src/http.ts` and the reasoning in ADR 0023. A route types
   what it sends, so drifting out of that shape is a type error.
+- Google is the only way to sign in (ADR 0025), and `/api/auth/*` is the one route
+  that answers in better-auth's shape rather than the envelope. Signing in mints
+  the `player` row and carries over today's Games only (ADR 0027).
 - The writes this app defines (`POST /game`, `POST /guess`) require an
   `Idempotency-Key` holding a uuid and store it on the row they create, so a
   retry cannot spend a second Guess or start a second Game. On `POST /game` that

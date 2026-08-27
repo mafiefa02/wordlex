@@ -127,3 +127,33 @@ describe("POST /game", () => {
     expect(await db.select().from(game)).toHaveLength(0);
   });
 });
+
+describe("POST /game, signed in", () => {
+  const EN5 = { language: "en", length: 5 } as const;
+
+  it("resumes the Player's Game on a device that holds no token", async () => {
+    const laptop = browser();
+    const { email } = await laptop.signIn();
+    await laptop.post("/game", EN5);
+    await laptop.post("/guess", { ...EN5, word: "creak" });
+
+    // A second browser: the same Account, none of the Game tokens.
+    const phone = browser();
+    await phone.signIn(email);
+    const resumed = await phone.post("/game", EN5);
+
+    expect(resumed.statusCode).toBe(200);
+    expect(board(resumed).guesses.map((played: { word: string }) => played.word)).toEqual([
+      "creak",
+    ]);
+    expect(await db.select().from(game)).toHaveLength(1);
+  });
+
+  it("gives one Player one Game per Daily, however many keys they press with", async () => {
+    const me = browser();
+    await me.signIn();
+    await me.post("/game", EN5, withKey(randomUUID()));
+    await me.post("/game", EN5, withKey(randomUUID()));
+    expect(await db.select().from(game)).toHaveLength(1);
+  });
+});

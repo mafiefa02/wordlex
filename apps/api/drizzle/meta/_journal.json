@@ -43,6 +43,20 @@
       "when": 1787839695310,
       "tag": "0005_spicy_bloodscream",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787842635392,
+      "tag": "0006_account_issuer",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787842743753,
+      "tag": "0007_badge_definitions",
+      "breakpoints": true
     }
   ]
 }

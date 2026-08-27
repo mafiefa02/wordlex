@@ -26,6 +26,20 @@ const Env = type({
   // Signs the per-Track Game token (ADR 0022). Unsigned, a browser could name
   // any Game id and claim the Game it points at.
   COOKIE_SECRET: "string >= 32",
+  // Signs better-auth's session cookie. Deliberately not COOKIE_SECRET: the two
+  // sign different things with different lifetimes, and rotating the Game token's
+  // secret should not sign every Player out.
+  BETTER_AUTH_SECRET: "string >= 32",
+  // This API's own base URL, which is what Google redirects back to. It must
+  // match the redirect URI registered in the Google Cloud console exactly, down
+  // to the scheme and port (ADR 0025).
+  BETTER_AUTH_URL: "string > 0",
+  GOOGLE_CLIENT_ID: "string > 0",
+  GOOGLE_CLIENT_SECRET: "string > 0",
+  // The domain the session cookie is set on, so one sign-in covers all three
+  // subdomains (ADR 0006). Unset locally, where every app is on `localhost` and
+  // a domain-scoped cookie is neither needed nor allowed.
+  "AUTH_COOKIE_DOMAIN?": "string > 0",
 });
 
 const parsed = Env(process.env);
@@ -43,4 +57,9 @@ export const env = {
   databaseUrl: parsed.DATABASE_URL,
   directUrl: parsed.DIRECT_URL,
   cookieSecret: parsed.COOKIE_SECRET,
+  authSecret: parsed.BETTER_AUTH_SECRET,
+  authUrl: parsed.BETTER_AUTH_URL,
+  googleClientId: parsed.GOOGLE_CLIENT_ID,
+  googleClientSecret: parsed.GOOGLE_CLIENT_SECRET,
+  authCookieDomain: parsed.AUTH_COOKIE_DOMAIN,
 };

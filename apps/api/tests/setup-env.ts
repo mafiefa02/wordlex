@@ -5,10 +5,17 @@
 //
 // This file imports nothing but constants on purpose — an import of anything
 // under `src/` would be evaluated before the lines below ever run.
-import { COOKIE_SECRET, ORIGIN, TEST_DATABASE_URL } from "./config";
+import { AUTH_SECRET, AUTH_URL, COOKIE_SECRET, ORIGIN, TEST_DATABASE_URL } from "./config";
 
 process.env.NODE_ENV = "test";
 process.env.DATABASE_URL = TEST_DATABASE_URL;
 process.env.DIRECT_URL = TEST_DATABASE_URL;
 process.env.ALLOWED_ORIGINS = ORIGIN;
 process.env.COOKIE_SECRET = COOKIE_SECRET;
+process.env.BETTER_AUTH_SECRET = AUTH_SECRET;
+process.env.BETTER_AUTH_URL = AUTH_URL;
+// Google is never reached: no test drives the redirect, and the second auth
+// instance in `tests/auth.ts` signs in without one. These exist because
+// `src/env.ts` refuses to boot a server that could not sign anyone in.
+process.env.GOOGLE_CLIENT_ID = "test-google-client-id";
+process.env.GOOGLE_CLIENT_SECRET = "test-google-client-secret";

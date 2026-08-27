@@ -83,11 +83,11 @@ _Avoid_: DNF, incomplete, expired, timed out
 ### Progress
 
 **Streak**:
-A run of consecutive WordleX Days on which a Player played. Always derived from Game history, never stored as a counter.
+A run of consecutive WordleX Days on which a Player *won* at least one Game, on any Track — one number, not one per language (ADR 0026). Always derived from Game history, never stored as a counter.
 _Avoid_: run, chain, combo
 
 **Badge**:
-A named achievement a Player has earned, awarded for breadth across languages or persistence over time.
+A named achievement a Player has earned, awarded for breadth across languages or persistence over time. Twelve exist; each is a question asked of a Player's whole history, so one added later is awarded for what they already did.
 _Avoid_: achievement, trophy, award
 
 ## Relationships
@@ -130,4 +130,5 @@ _Avoid_: achievement, trophy, award
 - "invalid word" implied the Player was wrong — resolved: it is an **Unknown Word**, because with Dictionaries this thin the list is at least as likely to be at fault as the Player.
 - "user" was used for both the **Player** and the **Account** — resolved: these are distinct, because a **Player** can exist with no **Account** at all.
 - "account" collides with better-auth once it is in the schema — resolved: better-auth's `user` table *is* the **Account**, and its `account` table is something else entirely, being one linked sign-in credential such as "signs in via Google". The vendor tables keep their own names; **Account** keeps its meaning here.
-- **Streak** scope is deliberately undecided — whether it is one number across all **Tracks** or one per language, and whether losing breaks it, are open. The data is stored so either can be derived later.
+- **Streak** scope was deliberately undecided — resolved by ADR 0026: one number across all twelve **Tracks**, counting days a **Player** won rather than days they played, and a day with no win breaks it whether they lost or never showed up. ADR 0008's shape is what allowed deciding this late, and still allows changing it.
+- "game mode" is still not a thing to say — a language and a word length together are a **Track**. This came up again when the Streak rule was set, and the rule itself is unaffected: "won on any **Track**" is what it means.

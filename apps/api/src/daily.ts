@@ -3,7 +3,7 @@ import { type } from "arktype";
 import type { FastifyInstance } from "fastify";
 import { type Board, readBoard, todaysDaily } from "./board";
 import { db } from "./db";
-import { type ApiResponse, fail } from "./http";
+import { type ApiResponse, fail, varyOnCookie } from "./http";
 import { gameFromToken } from "./session";
 
 // Path params arrive as strings, so `length` is parsed before it is checked
@@ -33,13 +33,9 @@ export function registerDaily(app: FastifyInstance) {
 
     const { language, length } = params;
 
-    // `Cache-Control: private, no-store` is set for every route in server.ts.
-    // Vary is this route's own business, because it is the only cacheable shape
-    // here: a GET whose body changes with the Game token. Appended, not set —
-    // `reply.header` replaces, and @fastify/cors has already put `Vary: Origin`
-    // here from an onRequest hook.
-    const vary = reply.getHeader("Vary");
-    reply.header("Vary", vary === undefined ? "Cookie" : `${String(vary)}, Cookie`);
+    // `Cache-Control: private, no-store` is set for every route in app.ts. Vary
+    // is per-route, because this body changes with the Game token.
+    varyOnCookie(reply);
 
     const result = await db.transaction(async (tx): Promise<Sent> => {
       const today = await todaysDaily(tx, language, length);

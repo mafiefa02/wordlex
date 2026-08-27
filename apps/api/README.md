@@ -7,7 +7,9 @@ never learns the Answer (ADR 0003).
 docker compose -f ../../docker-compose.yml up -d --wait
 cp .env.example .env
 node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
-#   ^ paste into COOKIE_SECRET, which ships blank so the server says so
+#   ^ run twice: once for COOKIE_SECRET, once for BETTER_AUTH_SECRET. Both ship
+#     blank, and the server refuses to boot until they are not.
+#     GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET too — see "Signing in" below.
 pnpm db:migrate
 pnpm db:seed                  # 124k rows from data/words.csv
 pnpm dev                      # http://localhost:4000/health
@@ -69,6 +71,12 @@ Track's Answer Pool is seeded with exactly one word, so `random()` in
 `wordlex_issue_daily` has nothing to choose between and today's Answer is known
 before a test starts. `browser()` in `tests/helpers.ts` keeps the Game token the
 API sets and sends it back, since a Game is resumable by nothing else.
+
+No test can drive Google's redirect, so `tests/auth.ts` builds a second
+better-auth on the server's own `authOptions` — same secret, same cookie name,
+same database, same sign-in hook — differing only in that it can start a session
+from an email and password. A session it issues is one the real server accepts,
+and `browser().signIn()` is what a test calls.
 
 `turbo run test` never caches this: the suite needs a live database, and both it
 and `packages/domain`'s cross the 00:00 WIB boundary, so yesterday's pass is not
@@ -182,6 +190,50 @@ is a deliberate act perhaps twice a year, and the diff is the point. **The seed
 never overwrites a reviewer** — it upserts only rows still marked `derived` with
 no `reviewed_at`, or re-running the derivation would resurrect every word a
 speaker rejected.
+
+## Signing in
+
+Google, and only Google (ADR 0025). better-auth is mounted at `/api/auth/*` and is
+the one place that does **not** answer in the `{ data }` / `{ error }` envelope —
+its own client parses those bodies.
+
+Local setup, once:
+
+1. Google Cloud console → APIs & Services → Credentials → Create credentials →
+   OAuth client ID → **Web application**.
+2. Authorized redirect URI: `http://localhost:4000/api/auth/callback/google`. It
+   has to match `BETTER_AUTH_URL` exactly, scheme and port included — a mismatch
+   fails at Google with an error this app never sees.
+3. Paste the client ID and secret into `.env`.
+
+Signing in mints a `player` row for the Account and takes over the anonymous
+Games this browser holds tokens for **today**, and nothing older (ADR 0027).
+Neither step can fail the sign-in itself: they run separately and log rather than
+throw, because a Player who cannot sign in has no app.
+
+A signed-in Player's Game is found by `(player_id, daily_id)` rather than by the
+Game token, so `POST /game` on a second device resumes the same Game instead of
+starting another. The token is still set, because `POST /guess` reads it.
+
+### A Player's own history
+
+Three routes, all 401 `NOT_SIGNED_IN` to anyone else:
+
+- `GET /me` — the Account, the Streak, and every Badge earned with its `seenAt`.
+- `GET /me/history` — one row per WordleX Day played, oldest first, counting Games
+  per language. That is both encodings ADR 0014 draws: the per-language rows, and
+  their sum for the small calendar. A Game with no Guesses is not a day played
+  (ADR 0026).
+- `POST /me/badges/seen` — marks every unseen Badge shown. The one write here with
+  no `Idempotency-Key`, on ADR 0024's own reasoning: it spends nothing and the
+  second call changes nothing.
+
+Nothing is stored (ADR 0008). The Streak is `streak()` in `packages/domain` over
+the days the Player won; the Badges are twelve predicates in `src/badges.ts`
+re-asked over their whole history whenever a Game finishes, so one added later
+awards retroactively. `badge_award` is the cache that lets the play app know the
+set changed between two page loads — the finishing Guess's response carries
+`data.badges` when it earned any.
 
 ## The database
 

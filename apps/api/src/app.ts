@@ -1,12 +1,15 @@
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import { type WordlexDay, wordlexDay } from "@wordlex/domain";
+import { fromNodeHeaders } from "better-auth/node";
 import Fastify, { type FastifyError, type FastifyServerOptions } from "fastify";
+import { auth } from "./auth";
 import { registerDaily } from "./daily";
 import { env } from "./env";
 import { registerGame } from "./game";
 import { registerGuess } from "./guess";
 import { type ApiSuccess, fail } from "./http";
+import { registerMe } from "./me";
 
 /**
  * The whole API, minus listening. Split out so the tests can drive it through
@@ -74,9 +77,47 @@ export async function buildApp(options: FastifyServerOptions = {}) {
     data: { ok: true, day: wordlexDay() },
   }));
 
+  /**
+   * Signing in, signing out, and the Google redirect back (ADR 0025). This is
+   * the one place that does **not** answer in ADR 0023's envelope: the shape is
+   * better-auth's, because better-auth's own client is what parses it, and
+   * rewriting the bodies of a library's endpoints breaks the library.
+   *
+   * The URL is rebuilt on `BETTER_AUTH_URL` rather than on the `Host` header, so
+   * a spoofed Host cannot change which origin better-auth thinks it is serving
+   * and therefore where it sends a Player back to.
+   */
+  app.route({
+    method: ["GET", "POST"],
+    url: "/api/auth/*",
+    async handler(request, reply) {
+      const response = await auth.handler(
+        new Request(new URL(request.url, env.authUrl), {
+          method: request.method,
+          headers: fromNodeHeaders(request.headers),
+          ...(request.body === undefined || request.body === null
+            ? {}
+            : { body: JSON.stringify(request.body) }),
+        }),
+      );
+
+      reply.code(response.status);
+      // Set-Cookie is the one header that legitimately repeats, and iterating
+      // the Headers object folds those into a single comma-joined string that no
+      // browser will parse back apart. A sign-in sets more than one.
+      for (const [name, value] of response.headers) {
+        if (name.toLowerCase() !== "set-cookie") reply.header(name, value);
+      }
+      for (const set of response.headers.getSetCookie()) reply.header("set-cookie", set);
+
+      return reply.send(response.body === null ? null : await response.text());
+    },
+  });
+
   registerGame(app);
   registerDaily(app);
   registerGuess(app);
+  registerMe(app);
 
   return app;
 }

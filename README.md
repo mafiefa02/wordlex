@@ -11,6 +11,7 @@ Start with `CONTEXT.md` for the vocabulary, `docs/adr/` for the decisions, and
 pnpm install
 docker compose up -d --wait
 cp apps/api/.env.example apps/api/.env
+#   fill in the two secrets and the Google OAuth client — apps/api/README.md says how
 pnpm --filter @wordlex/api db:migrate
 pnpm --filter @wordlex/api db:seed
 pnpm dev
