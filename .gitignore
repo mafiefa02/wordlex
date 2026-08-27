@@ -13,6 +13,7 @@ dist/
 # Local config
 .env
 .env.local
+.vercel
 
 # Word-list sources, refetched by scripts/build-words.mjs when missing
 data/.cache/

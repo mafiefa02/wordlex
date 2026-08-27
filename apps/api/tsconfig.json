@@ -1,7 +1,24 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node"]
+    // Deliberately not `extends: "../../tsconfig.base.json"`, and kept in sync
+    // with it by hand. Vercel's Node runtime type-checks the entrypoint using
+    // the tsconfig in the Root Directory it was given — `apps/api` — and does
+    // not follow an `extends` that points outside it. Inherited `lib` and
+    // `types` were silently lost there, so `Response` stopped being the Web one
+    // and the deploy failed on a file that type-checks clean locally.
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "noEmit": true
   },
   "include": [
     "src/**/*.ts",
