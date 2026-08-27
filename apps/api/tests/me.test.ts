@@ -1,3 +1,4 @@
+import type { Language, Length } from "@wordlex/domain";
 import { wordlexDay } from "@wordlex/domain";
 import { describe, expect, it } from "vitest";
 import { BADGES } from "../src/badges";
@@ -102,6 +103,27 @@ describe("badges", () => {
     expect(after.every((earned: { seenAt: string | null }) => earned.seenAt !== null)).toBe(true);
     // Nothing left to mark, and saying so twice is not an error.
     expect(JSON.parse((await me.post("/me/badges/seen", {})).body).data).toEqual({ seen: 0 });
+  });
+
+  it("awards one about playing without waiting for a Game to end", async () => {
+    const me = browser();
+    await me.signIn();
+
+    /** Starts a Track and spends one Guess on it, without finishing it. */
+    const play = async (language: Language, length: Length, word: string) => {
+      await me.post("/game", { language, length });
+      const played = JSON.parse((await me.post("/guess", { language, length, word })).body).data;
+      expect(played.game.status).toBe("playing");
+      return (played.badges ?? []).map((earned: { id: string }) => earned.id);
+    };
+
+    const english = await play("en", 5, "creak");
+    const indonesian = await play("id", 5, "minum");
+    const sundanese = await play("su", 5, "manuk");
+    const javanese = await play("jv", 7, "kawanan");
+
+    expect([english, indonesian, sundanese]).toEqual([[], [], []]);
+    expect(javanese).toEqual(["all-four-in-a-day"]);
   });
 
   it("has a row for every Badge the code can award, and no others", async () => {

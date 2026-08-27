@@ -1,7 +1,7 @@
 -- The twelve Badges that exist (ADR 0011). Reference data, not authoring: each
 -- one needs the predicate in `src/badges.ts` that earns it, and a row here with
 -- no predicate is a Badge nobody can ever be awarded. The two lists are checked
--- against each other in `tests/badges.test.ts`.
+-- against each other in `tests/me.test.ts`.
 --
 -- Rewording is a new migration that inserts the same ids, which is why this
 -- overwrites the copy rather than skipping rows it has already seen.

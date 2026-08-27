@@ -1,5 +1,12 @@
 # Every Player is a row, and merging runs on sign-in as well as sign-up
 
+_Amended: the deletion this ADR describes now exists. `POST /api/auth/delete-user` drops the
+Account and every session with it; `player.account_id` is `on delete set null`, so the Player
+survives with their Games, Badges and Unknown Words intact. Nobody can reach that history
+again — signing in with the same Google account afterwards is a new Player starting at zero —
+and that is the trade: the play data stays as evidence for ADRs 0009 and 0012, stripped of
+who it belonged to._
+
 _Amended again: ADR 0027 decides what the merge carries. Today's Games and nothing else, with
 the collision rule below unchanged and `unknown_word_attempt` deliberately left where it is._
 

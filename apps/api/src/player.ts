@@ -6,11 +6,25 @@ import { game, player, type Queryable } from "./db";
  * Everything a Player owns points here rather than at better-auth's `user`, so
  * this is the translation between the two and the only place that mints.
  *
- * Insert-then-read rather than read-then-insert: two requests arriving together
- * for the same Account both read nothing, and `player.account_id` being unique
- * is what picks a winner. The loser reads the winner's row.
+ * Read first, because every signed-in request asks this and all but the first
+ * find a row — a board read should not write. The insert is still the thing that
+ * settles a race: two requests arriving together for a new Account both read
+ * nothing, and `player.account_id` being unique picks the winner. The loser
+ * reads the winner's row.
  */
 export async function playerFor(tx: Queryable, accountId: string): Promise<string> {
+  const read = async () =>
+    (
+      await tx
+        .select({ id: player.id })
+        .from(player)
+        .where(eq(player.accountId, accountId))
+        .limit(1)
+    )[0];
+
+  const found = await read();
+  if (found) return found.id;
+
   const [minted] = await tx
     .insert(player)
     .values({ accountId })
@@ -18,13 +32,9 @@ export async function playerFor(tx: Queryable, accountId: string): Promise<strin
     .returning({ id: player.id });
   if (minted) return minted.id;
 
-  const [found] = await tx
-    .select({ id: player.id })
-    .from(player)
-    .where(eq(player.accountId, accountId))
-    .limit(1);
-  if (!found) throw new Error(`no Player for Account ${accountId} after minting one`);
-  return found.id;
+  const raced = await read();
+  if (!raced) throw new Error(`no Player for Account ${accountId} after minting one`);
+  return raced.id;
 }
 
 /**

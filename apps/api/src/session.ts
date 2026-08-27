@@ -49,27 +49,38 @@ export function gameIdsFromCookieHeader(header: string | undefined | null): stri
 
 /**
  * The Game this browser holds a token for on this Track, if that token is one we
- * signed and it names a Game against *today's* Daily.
+ * signed, it names a Game against *today's* Daily, and the caller is allowed it.
  *
- * The second half is the point: a token is only ever good for the one Game it
- * names. Presenting yesterday's, or another Track's, or another Daily's finds
- * nothing rather than attaching the request to a Game it was not issued for.
+ * The Daily check is why a token is only ever good for the one Game it names.
+ * Presenting yesterday's, or another Track's, finds nothing rather than
+ * attaching the request to a Game it was not issued for.
+ *
+ * `playerId` is who is asking, and undefined for nobody. **A token alone never
+ * claims a Game that belongs to a Player.** Anonymous Games have no other claim,
+ * so for those the token is the whole of it (ADR 0022) — but signing out leaves
+ * twelve of them in the browser, still naming Games that are now somebody's, and
+ * without this the next person at a shared computer could spend their Guesses
+ * and lose their Daily. The cookies are left where they are; they simply stop
+ * working, which is one check rather than a sign-out path that has to run.
  */
 export async function gameFromToken(
   tx: Transaction,
   request: FastifyRequest,
   today: Daily,
+  playerId: string | undefined,
 ): Promise<{ id: string; status: (typeof gameStatus.enumValues)[number] } | undefined> {
   const signed = request.cookies[cookieName(today.language, today.length)];
   const unsigned = signed === undefined ? undefined : request.unsignCookie(signed);
   if (!unsigned?.valid || unsigned.value === null || !UUID.test(unsigned.value)) return undefined;
 
   const [found] = await tx
-    .select({ id: game.id, status: game.status })
+    .select({ id: game.id, status: game.status, playerId: game.playerId })
     .from(game)
     .where(and(eq(game.id, unsigned.value), eq(game.dailyId, today.id)))
     .limit(1);
-  return found;
+  if (!found) return undefined;
+  if (found.playerId !== null && found.playerId !== playerId) return undefined;
+  return { id: found.id, status: found.status };
 }
 
 /**

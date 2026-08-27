@@ -2,10 +2,12 @@ import { guessBudget, LANGUAGES, LENGTHS, score } from "@wordlex/domain";
 import { type } from "arktype";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { accountFromRequest } from "./account";
 import { awardBadges, type EarnedBadge } from "./badges";
 import { type Board, readBoard, todaysDaily } from "./board";
 import { db, game, guess, unknownWordAttempt, word } from "./db";
 import { type ApiResponse, fail, idempotencyKey } from "./http";
+import { playerFor } from "./player";
 import { gameFromToken } from "./session";
 
 const Body = type({
@@ -41,10 +43,12 @@ type Submitted =
       outcome: "scored";
       game: Board;
       /**
-       * Badges this Guess earned, present only on the one that ended the Game and
-       * only for a signed-in Player (ADR 0011). A retry of that Guess replays the
-       * board without them, which is why `GET /me` carries every Badge with a null
-       * `seenAt` too — the toast has a second source, not a single delivery.
+       * Badges this Guess earned, and only for a signed-in Player (ADR 0011).
+       * Present on the Guess that ended the Game and on a Game's first Guess,
+       * which between them are every moment the earned set can change. A retry
+       * replays the board without them, which is why `GET /me` carries every
+       * Badge with a null `seenAt` too — the toast has a second source, not a
+       * single delivery.
        */
       badges?: EarnedBadge[];
     }
@@ -82,6 +86,7 @@ export function registerGuess(app: FastifyInstance) {
 
     const { language, length } = body;
     const typed = fold(body.word);
+    const account = await accountFromRequest(request);
 
     // Wrong length or anything outside a-z stops here: it never reaches the
     // Dictionary check and is never recorded, which is what keeps the Unknown
@@ -109,7 +114,8 @@ export function registerGuess(app: FastifyInstance) {
       // today's Daily on this Track there is nothing to attach it to, and
       // starting one here would let a browser that discarded its token
       // silently restart the day (ADR 0022).
-      const held = await gameFromToken(tx, request, today);
+      const playerId = account ? await playerFor(tx, account.id) : undefined;
+      const held = await gameFromToken(tx, request, today, playerId);
       if (!held) {
         return {
           code: 401,
@@ -234,11 +240,15 @@ export function registerGuess(app: FastifyInstance) {
         await tx.update(game).set({ status }).where(eq(game.id, current.id));
       }
 
-      // A finished Game is the only thing that can change the earned set, and an
-      // anonymous one has nobody to award to (ADR 0022). Inside the transaction,
-      // so a Badge is never awarded for a Guess that rolled back.
-      const badges =
-        status !== "playing" && current.playerId ? await awardBadges(tx, current.playerId) : [];
+      // Two moments can change the earned set, and both are here. A Game ending
+      // settles every Badge about winning; a Game's *first* Guess is what makes
+      // it count as played (ADR 0026), which is what the four Badges about
+      // breadth ask — so someone who plays four languages and finishes none of
+      // them still earns "Four Languages" on the fourth first Guess. An
+      // anonymous Game has nobody to award to (ADR 0022). Inside the
+      // transaction, so nothing is awarded for a Guess that rolled back.
+      const earnable = status !== "playing" || position === 1;
+      const badges = earnable && current.playerId ? await awardBadges(tx, current.playerId) : [];
 
       // Read back rather than appending locally, so the response is what was
       // actually written and both routes build a board exactly one way.

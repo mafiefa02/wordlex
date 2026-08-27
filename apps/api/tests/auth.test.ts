@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { previousDay, wordlexDay } from "@wordlex/domain";
 import { count, eq, isNull } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
+import { user } from "../src/db/auth-schema";
 import { daily, db, game, player } from "../src/db";
 import { claimTodaysGames } from "../src/player";
 import { ANSWER, browser } from "./helpers";
@@ -61,6 +62,29 @@ describe("signing in", () => {
     expect(JSON.parse((await me.get("/me/history")).body).data.days).toEqual([]);
   });
 
+  it("stops the Game token working once nobody is signed in", async () => {
+    const owner = browser();
+    await owner.signIn();
+    await owner.post("/game", EN5);
+    await owner.post("/guess", { ...EN5, word: "creak" });
+
+    // The same browser after signing out: the Game token is still in the jar.
+    const after = browser();
+    after.cookies.wordlex_game_en_5 = owner.cookies.wordlex_game_en_5!;
+
+    const refused = await after.post("/guess", { ...EN5, word: "sells" });
+    expect(refused.statusCode).toBe(401);
+    expect(JSON.parse(refused.body).error.code).toBe("NO_GAME_TOKEN");
+
+    // And the board reads as untouched rather than showing the Player's Guesses.
+    const board = JSON.parse((await after.get("/daily/en/5")).body).data.game;
+    expect(board.guesses).toEqual([]);
+
+    // Pressing Play starts a fresh anonymous Game rather than taking that one.
+    await after.post("/game", EN5);
+    expect(await db.select().from(game)).toHaveLength(2);
+  });
+
   it("leaves yesterday's Game alone", async () => {
     const [yesterday] = await db
       .insert(daily)
@@ -78,5 +102,27 @@ describe("signing in", () => {
       .from(game)
       .where(eq(game.id, stale!.id));
     expect(after?.playerId).toBeNull();
+  });
+});
+
+describe("deleting an Account", () => {
+  it("unlinks the Player and keeps everything they played", async () => {
+    const me = browser();
+    await me.signIn();
+    await me.post("/game", EN5);
+    await me.post("/guess", { ...EN5, word: "creak" });
+    const { id: playerId } = JSON.parse((await me.get("/me")).body).data.player;
+
+    const deleted = await me.post("/api/auth/delete-user", {});
+    expect(deleted.statusCode).toBe(200);
+
+    // The Account is gone, and so is the session it was holding.
+    expect(await db.select().from(user)).toHaveLength(0);
+    expect((await me.get("/me")).statusCode).toBe(401);
+
+    // The Player survives, unlinked, with their Games (ADR 0020).
+    const [unlinked] = await db.select().from(player).where(eq(player.id, playerId));
+    expect(unlinked?.accountId).toBeNull();
+    expect(await db.select().from(game).where(eq(game.playerId, playerId))).toHaveLength(1);
   });
 });

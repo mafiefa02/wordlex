@@ -42,6 +42,12 @@ const WORDS: Seed[] = [
   // Folded key against accented spelling, which is what the reveal reads
   // instead of the key (ADR 0004).
   { language: "su", length: 5, word: "maneh", display: "manéh", pool: true },
+  { language: "su", length: 5, word: "manuk", display: "manuk" },
+  // Indonesian-5 exists so a test can play all four languages in one day
+  // without finishing any of them. Indonesian-*6* is still absent, which is the
+  // Track with no Answer Pool that the 503 tests need.
+  { language: "id", length: 5, word: "makan", display: "makan", pool: true },
+  { language: "id", length: 5, word: "minum", display: "minum" },
   { language: "jv", length: 7, word: "makanan", display: "makanan", pool: true },
   { language: "jv", length: 7, word: "kawanan", display: "kawanan" },
 ];

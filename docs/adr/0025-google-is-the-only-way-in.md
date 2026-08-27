@@ -58,6 +58,18 @@ them like any other write, `Cache-Control: private, no-store` is set for them, a
 better-auth sees is rebuilt on `BETTER_AUTH_URL` rather than on the `Host` header, so a
 spoofed Host cannot move the origin it thinks it is serving.
 
+## Deleting an Account, with no mail to fall back on
+
+better-auth will delete an Account without a password when the session is **fresh**, and
+otherwise wants an email verification we have no way to send. With one provider and no mail,
+a re-sign-in *is* the confirmation step, so `session.freshAge` is five minutes rather than
+better-auth's one day: almost every deletion is preceded by signing in again, which is the
+whole protection an Account has against a walk-up on an unlocked browser. Freshness is asked
+about nowhere else, so tightening it costs nothing.
+
+What deletion does is ADR 0020's rule, unchanged: the Account goes, the Player stays,
+unlinked and unreachable, with everything they played still in the database.
+
 ## Configuration, and the two ways it goes wrong
 
 `BETTER_AUTH_SECRET` is separate from `COOKIE_SECRET` on purpose. They sign different things

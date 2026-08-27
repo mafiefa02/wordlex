@@ -44,8 +44,8 @@ const distinct = <T>(items: T[], key: (item: T) => string) => new Set(items.map(
 /**
  * Every Badge, as the question that earns it (ADR 0011: breadth and persistence,
  * never speed or skill). The ids are the contract — `badge_award.badge` is a
- * foreign key into rows carrying the same ones, and `tests/badges.test.ts`
- * checks the two lists have not drifted apart.
+ * foreign key into rows carrying the same ones, and `tests/me.test.ts` checks the
+ * two lists have not drifted apart.
  *
  * A predicate is asked about the Player's whole history every time, so a Badge
  * is never missed by having been added late.

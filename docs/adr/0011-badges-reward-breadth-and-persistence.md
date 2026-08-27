@@ -2,10 +2,14 @@
 
 _Amended: the twelve Badges now exist. Their ids and the predicates that earn them are in
 `apps/api/src/badges.ts`, their copy is rows written by a migration, and a test checks the two
-lists have not drifted. Every predicate is re-asked over the Player's whole history whenever a
-Game finishes, so a Badge added later still awards retroactively — and by ADR 0026 the ones
-counting breadth only look at Games with a Guess in them, or four Play presses would earn
-"Four Languages"._
+lists have not drifted. Every predicate is re-asked over the Player's whole history, so a
+Badge added later still awards retroactively.
+
+Superseding the note below about the ledger being written "when a Game finishes": it is
+written at the **two** moments the earned set can change, which are a Game ending and a
+Game's *first* Guess. The second is there because by ADR 0026 a Game counts as played only
+once it has a Guess, and the four Badges about breadth ask exactly that — without it, four
+Play presses and no words would earn "Four Languages"._
 
 _Decided during the design session; written up afterwards, which is why the ADR that depends on it (0010) is numbered before it._
 

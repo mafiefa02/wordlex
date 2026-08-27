@@ -215,6 +215,18 @@ A signed-in Player's Game is found by `(player_id, daily_id)` rather than by the
 Game token, so `POST /game` on a second device resumes the same Game instead of
 starting another. The token is still set, because `POST /guess` reads it.
 
+**A Game token never claims a Game that belongs to a Player.** Signing out leaves
+twelve of them in the browser, still naming Games that are now somebody's, so
+`gameFromToken` refuses one whose Game has a `player_id` that is not the
+caller's. The cookies are left where they are and simply stop working. An
+anonymous Game is unaffected — the token is its only claim (ADR 0022).
+
+`POST /api/auth/delete-user` deletes the Account and every session with it, and
+leaves the Player behind: `player.account_id` goes null and their Games, Badges
+and Unknown Words stay (ADR 0020). Nobody can reach that history again. It needs
+a session created in the last five minutes, because with no password and no mail
+a re-sign-in is the only confirmation step there is.
+
 ### A Player's own history
 
 Three routes, all 401 `NOT_SIGNED_IN` to anyone else:
@@ -232,8 +244,10 @@ Nothing is stored (ADR 0008). The Streak is `streak()` in `packages/domain` over
 the days the Player won; the Badges are twelve predicates in `src/badges.ts`
 re-asked over their whole history whenever a Game finishes, so one added later
 awards retroactively. `badge_award` is the cache that lets the play app know the
-set changed between two page loads — the finishing Guess's response carries
-`data.badges` when it earned any.
+set changed between two page loads. A Guess's response carries `data.badges` when
+it earned any, at the two moments the set can change: the Guess that ends a Game,
+and a Game's *first* Guess — which is what makes it count as played, and so is
+what earns the four Badges about breadth (ADR 0026).
 
 ## The database
 

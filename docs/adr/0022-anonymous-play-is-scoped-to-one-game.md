@@ -4,6 +4,13 @@ _Reverses the anonymous half of ADR 0007 and ADR 0020, and replaces `POST /playe
 ADR 0021 with `POST /game`. A **Player** now means a signed-in Player. Everything those
 ADRs say about Accounts, and ADR 0021's Origin check, still stands._
 
+_Amended: a Game token is now refused when it names a Game that belongs to a Player and the
+request is not that Player's. Signing out leaves twelve tokens in the browser still naming
+Games that are now somebody's, and without the check the next person at a shared computer
+could spend their Guesses and lose their Daily. The cookies are left in place and simply stop
+working, which is one check rather than a sign-out path that has to run. Nothing changes for
+an anonymous Game: it has no other claim, so the token is still the whole of it._
+
 _Amended by ADR 0024: "Two Play presses racing each other do make two Games… The client
 must not fire concurrent starts" below is now conditional. Both `POST /game` and
 `POST /guess` require an `Idempotency-Key`, and two starts carrying the same one collapse

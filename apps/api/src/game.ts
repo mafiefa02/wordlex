@@ -88,7 +88,9 @@ export function registerGame(app: FastifyInstance) {
               .where(and(eq(game.playerId, playerId), eq(game.dailyId, today.id)))
               .limit(1)
           )[0]
-        : await gameFromToken(tx, request, today);
+        : // Nobody is signed in, so a token naming a Player's Game is refused and
+          // this starts a fresh anonymous one instead.
+          await gameFromToken(tx, request, today, undefined);
 
       if (resumed) {
         // Only the signed-in half needs a token here: it was found by who they

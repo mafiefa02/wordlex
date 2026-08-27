@@ -36,6 +36,21 @@ export const authOptions = {
   socialProviders: {
     google: { clientId: env.googleClientId, clientSecret: env.googleClientSecret },
   },
+  session: {
+    // Only deletion asks whether a session is fresh, and with Google as the one
+    // provider there is no password and no mail to fall back on — a re-sign-in
+    // *is* the confirmation step. Five minutes means almost every deletion is
+    // preceded by one, which is the whole protection an Account has against a
+    // walk-up on an unlocked browser (ADR 0025). It costs nothing elsewhere.
+    freshAge: 60 * 5,
+  },
+  user: {
+    // Deleting an Account unlinks it and keeps the play data: better-auth drops
+    // the `user` row and its sessions, and `player.account_id` is `on delete set
+    // null`, so the Player survives with their Games, Badges and Unknown Words
+    // intact and nobody able to reach them again (ADR 0020).
+    deleteUser: { enabled: true },
+  },
   advanced: {
     useSecureCookies: env.secureCookies,
     // Set on `.wordlex.com` in production so one sign-in covers all three

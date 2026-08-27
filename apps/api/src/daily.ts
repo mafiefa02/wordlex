@@ -1,9 +1,11 @@
 import { LANGUAGES, LENGTHS } from "@wordlex/domain";
 import { type } from "arktype";
 import type { FastifyInstance } from "fastify";
+import { accountFromRequest } from "./account";
 import { type Board, readBoard, todaysDaily } from "./board";
 import { db } from "./db";
 import { type ApiResponse, fail, varyOnCookie } from "./http";
+import { playerFor } from "./player";
 import { gameFromToken } from "./session";
 
 // Path params arrive as strings, so `length` is parsed before it is checked
@@ -32,6 +34,7 @@ export function registerDaily(app: FastifyInstance) {
     }
 
     const { language, length } = params;
+    const account = await accountFromRequest(request);
 
     // `Cache-Control: private, no-store` is set for every route in app.ts. Vary
     // is per-route, because this body changes with the Game token.
@@ -49,9 +52,11 @@ export function registerDaily(app: FastifyInstance) {
         };
       }
 
-      // No token, or one for another Game, reads as "you have not started this
-      // Track today" — an empty board, and nothing is created to say so.
-      const held = await gameFromToken(tx, request, today);
+      // No token, one for another Game, or one for a Game that belongs to
+      // somebody else, all read as "you have not started this Track today" — an
+      // empty board, and nothing is created to say so.
+      const playerId = account ? await playerFor(tx, account.id) : undefined;
+      const held = await gameFromToken(tx, request, today, playerId);
 
       return { code: 200, body: { data: { game: await readBoard(tx, today, held) } } };
     });
