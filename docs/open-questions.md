@@ -14,7 +14,7 @@ None. Every word-quality step is either mechanical or deferred — see ADR 0013'
 
 ## Deliberately after launch
 
-**Reviewing the Answer Pools.** All four languages, unreviewed at launch, cleaned from play data instead — ADR 0012 records the risk and the two signals we will use. The review files are already generated and waiting in `data/review/`: 2,638 Indonesian words and 17 Sundanese/Javanese ones, in a delete-what-is-fine format. Nothing needs regenerating when someone gets to them.
+**Reviewing the Answer Pools.** All four languages, unreviewed at launch, cleaned from play data instead — ADR 0012 records the risk and the two signals we will use. The review files were generated once — 2,638 Indonesian words and 17 Sundanese/Javanese ones, in a delete-what-is-fine format — and then taken back out of the repo along with the script that builds them. Both are in commit `ba775eb` if the review ever happens, and the script refetches its sources from scratch.
 
 **Profanity in Indonesian, Sundanese and Javanese.** No blocklist source exists for any of the three (ADR 0013). English is covered mechanically by LDNOOBW. This rides along with the pool review above.
 

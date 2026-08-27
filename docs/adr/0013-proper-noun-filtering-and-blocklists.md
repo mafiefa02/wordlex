@@ -2,6 +2,8 @@
 
 _Amended: the human review steps below were deferred before launch, so only the mechanical parts run for the first release. See "What actually ships" at the end._
 
+_Amended again: `scripts/build-review-lists.mjs` and the `data/review/` files it wrote were removed from the repo. Every path named below is recoverable from commit `ba775eb`; the script refetches its own sources, so nothing is lost._
+
 Answer Pools ship without a human quality pass (ADR 0012). This ADR covers what can be done about names and unusable words *without* a human, and records what is left on the table when nobody reviews. Each language gets a different treatment, because the available resources differ wildly.
 
 ## English — mechanical, no review

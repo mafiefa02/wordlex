@@ -28,6 +28,14 @@ hand-wrapped prose.
 
 ## Layout
 
-See ADR 0015. Three apps under `apps/`, one shared package under `packages/domain`.
-The Dictionary and Answer Pool belong to `apps/api` and must stay there — that is
-what keeps ADR 0003 true.
+| Path | What it is |
+|---|---|
+| [`apps/landing`](apps/landing) | Next.js, `wordlex.com` |
+| [`apps/play`](apps/play) | TanStack Start, `play.wordlex.com` |
+| [`apps/api`](apps/api) | Fastify, `api.wordlex.com` |
+| [`packages/domain`](packages/domain) | The vocabulary, as types and functions |
+| [`packages/ui`](packages/ui) | The design system and every component |
+
+Each has its own README. The shape and its one hard rule are in ADR 0015: the
+Dictionary and Answer Pool belong to `apps/api` and must stay there, because that
+is what keeps ADR 0003 true.

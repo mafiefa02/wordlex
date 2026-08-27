@@ -43,6 +43,6 @@ pull zod in as its own dependency; that is its business, not ours.
 
 ## Not here yet
 
-No database, no auth, no word lists. `scripts/build-review-lists.mjs` writes the
-review lists from ADR 0013, but nothing yet writes the Dictionary and Answer Pool
-files the API will read.
+No database, no auth, no word lists. Nothing in the repo writes the Dictionary and
+Answer Pool files the API will read; the one script that ever touched word lists
+built ADR 0013's review lists and has since been removed.

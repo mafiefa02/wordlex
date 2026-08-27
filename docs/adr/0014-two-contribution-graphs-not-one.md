@@ -10,4 +10,4 @@ The stacked version has a property the others don't: language survives without c
 
 The four language colours are validated for both themes rather than chosen by eye; the green/amber pair separates only thinly under tritanopia, which is a further reason not to let hue carry meaning alone.
 
-Mocks: `mocks/contribution-graph.html`.
+Mocks: `mocks/contribution-graph.html`, removed from the repo and recoverable from commit `ba775eb`. Its palette lives on as the design system's tokens (ADR 0016).
