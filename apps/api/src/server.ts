@@ -1,6 +1,6 @@
-import { buildApp } from "./app";
-import { env } from "./env";
-import { logFatalExits } from "./logger";
+import { buildApp } from "./app.js";
+import { env } from "./env.js";
+import { logFatalExits } from "./logger.js";
 
 // Before the app exists, so a failure while it is being built is logged too.
 logFatalExits();

@@ -1,6 +1,6 @@
 import { type Language, type Length, type Mark, score, type WordlexDay } from "@wordlex/domain";
 import { and, eq, sql } from "drizzle-orm";
-import { daily, gameStatus, guess, type Transaction, word } from "./db";
+import { daily, gameStatus, guess, type Transaction, word } from "./db/index.js";
 
 /** Today's Daily for a Track, and where one Player stands on it. */
 export type Board = {

@@ -10,12 +10,12 @@ import {
 import { type } from "arktype";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyRequest } from "fastify";
-import { accountFromRequest } from "./account";
-import { type Board, readBoard, todaysDaily } from "./board";
-import { daily, db, game, gameStatus, guess, type Transaction } from "./db";
-import { type ApiResponse, fail, varyOnCookie } from "./http";
-import { playerFor } from "./player";
-import { gameForRequest, gameIdsFromCookieHeader } from "./session";
+import { accountFromRequest } from "./account.js";
+import { type Board, readBoard, todaysDaily } from "./board.js";
+import { daily, db, game, gameStatus, guess, type Transaction } from "./db/index.js";
+import { type ApiResponse, fail, varyOnCookie } from "./http.js";
+import { playerFor } from "./player.js";
+import { gameForRequest, gameIdsFromCookieHeader } from "./session.js";
 
 // Path params arrive as strings, so `length` is parsed before it is checked
 // against the three the game has.

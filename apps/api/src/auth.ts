@@ -1,11 +1,11 @@
 import type { BetterAuthOptions } from "better-auth";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "./db";
-import { env } from "./env";
-import { logger } from "./logger";
-import { claimTodaysGames, playerFor } from "./player";
-import { gameIdsFromCookieHeader } from "./session";
+import { db } from "./db/index.js";
+import { env } from "./env.js";
+import { logger } from "./logger.js";
+import { claimTodaysGames, playerFor } from "./player.js";
+import { gameIdsFromCookieHeader } from "./session.js";
 
 /**
  * Everything better-auth is configured with, kept separate from the instance so

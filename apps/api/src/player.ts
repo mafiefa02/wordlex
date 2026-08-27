@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
-import { game, player, type Queryable } from "./db";
+import { game, player, type Queryable } from "./db/index.js";
 
 /**
  * The Player row for an Account, minted the first time we see one (ADR 0025).

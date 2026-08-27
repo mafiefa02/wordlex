@@ -4,15 +4,15 @@ import { type WordlexDay, wordlexDay } from "@wordlex/domain";
 import { fromNodeHeaders } from "better-auth/node";
 import { sql } from "drizzle-orm";
 import Fastify, { type FastifyError, type FastifyServerOptions } from "fastify";
-import { auth } from "./auth";
-import { registerDaily } from "./daily";
-import { db } from "./db";
-import { env } from "./env";
-import { registerGame } from "./game";
-import { registerGuess } from "./guess";
-import { type ApiSuccess, fail } from "./http";
-import { logger } from "./logger";
-import { registerMe } from "./me";
+import { auth } from "./auth.js";
+import { registerDaily } from "./daily.js";
+import { db } from "./db/index.js";
+import { env } from "./env.js";
+import { registerGame } from "./game.js";
+import { registerGuess } from "./guess.js";
+import { type ApiSuccess, fail } from "./http.js";
+import { logger } from "./logger.js";
+import { registerMe } from "./me.js";
 
 /**
  * The whole API, minus listening. Split out so the tests can drive it through

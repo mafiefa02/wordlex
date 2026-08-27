@@ -1,8 +1,8 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { env } from "../env";
-import * as authSchema from "./auth-schema";
-import * as schema from "./schema";
+import { env } from "../env.js";
+import * as authSchema from "./auth-schema.js";
+import * as schema from "./schema.js";
 
 // Supavisor in transaction mode hands out a different backend per statement, so
 // a prepared statement is rarely still there when it is reused (ADR 0015). It
@@ -22,4 +22,4 @@ export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
  */
 export type Queryable = typeof db | Transaction;
 
-export * from "./schema";
+export * from "./schema.js";

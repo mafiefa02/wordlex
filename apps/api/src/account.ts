@@ -1,6 +1,6 @@
 import { fromNodeHeaders } from "better-auth/node";
 import type { FastifyRequest } from "fastify";
-import { auth } from "./auth";
+import { auth } from "./auth.js";
 
 /**
  * The Account this request is signed in as, or undefined for anyone else

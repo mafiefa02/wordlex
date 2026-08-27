@@ -2,12 +2,12 @@ import { LANGUAGES, LENGTHS } from "@wordlex/domain";
 import { type } from "arktype";
 import { and, count, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { accountFromRequest } from "./account";
-import { type Board, type Daily, readBoard, todaysDaily } from "./board";
-import { db, game, guess } from "./db";
-import { type ApiResponse, fail, idempotencyKey } from "./http";
-import { playerFor } from "./player";
-import { gameForRequest, setGameToken } from "./session";
+import { accountFromRequest } from "./account.js";
+import { type Board, type Daily, readBoard, todaysDaily } from "./board.js";
+import { db, game, guess } from "./db/index.js";
+import { type ApiResponse, fail, idempotencyKey } from "./http.js";
+import { playerFor } from "./player.js";
+import { gameForRequest, setGameToken } from "./session.js";
 
 const Body = type({
   language: type.enumerated(...LANGUAGES),

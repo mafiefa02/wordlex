@@ -15,7 +15,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { user } from "./auth-schema";
+import { user } from "./auth-schema.js";
 
 const createdAt = timestamp("created_at", { withTimezone: true }).defaultNow().notNull();
 

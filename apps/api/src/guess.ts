@@ -2,13 +2,13 @@ import { guessBudget, LANGUAGES, LENGTHS, score } from "@wordlex/domain";
 import { type } from "arktype";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { accountFromRequest } from "./account";
-import { awardBadges, type EarnedBadge } from "./badges";
-import { type Board, readBoard, todaysDaily } from "./board";
-import { db, game, guess, unknownWordAttempt, word } from "./db";
-import { type ApiResponse, fail, idempotencyKey } from "./http";
-import { playerFor } from "./player";
-import { gameForRequest } from "./session";
+import { accountFromRequest } from "./account.js";
+import { awardBadges, type EarnedBadge } from "./badges.js";
+import { type Board, readBoard, todaysDaily } from "./board.js";
+import { db, game, guess, unknownWordAttempt, word } from "./db/index.js";
+import { type ApiResponse, fail, idempotencyKey } from "./http.js";
+import { playerFor } from "./player.js";
+import { gameForRequest } from "./session.js";
 
 const Body = type({
   language: type.enumerated(...LANGUAGES),

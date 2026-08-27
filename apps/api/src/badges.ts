@@ -7,7 +7,7 @@ import {
   wordlexDay,
 } from "@wordlex/domain";
 import { asc, eq, inArray, sql } from "drizzle-orm";
-import { badge, badgeAward, daily, game, guess, type Queryable } from "./db";
+import { badge, badgeAward, daily, game, guess, type Queryable } from "./db/index.js";
 
 /**
  * One of a Player's Games, flattened to what a Badge can ask about. This is

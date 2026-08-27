@@ -2,9 +2,9 @@ import { fastifyCookie, signerFactory } from "@fastify/cookie";
 import { dayEndsAt, type Language, type Length, TRACKS } from "@wordlex/domain";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import type { Daily } from "./board";
-import { game, gameStatus, type Transaction } from "./db";
-import { env } from "./env";
+import type { Daily } from "./board.js";
+import { game, gameStatus, type Transaction } from "./db/index.js";
+import { env } from "./env.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 

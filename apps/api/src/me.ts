@@ -1,11 +1,11 @@
 import { type Language, wordlexDay, type WordlexDay, streak } from "@wordlex/domain";
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { accountFromRequest } from "./account";
-import { playerHistory } from "./badges";
-import { badge, badgeAward, db } from "./db";
-import { type ApiResponse, fail, varyOnCookie } from "./http";
-import { playerFor } from "./player";
+import { accountFromRequest } from "./account.js";
+import { playerHistory } from "./badges.js";
+import { badge, badgeAward, db } from "./db/index.js";
+import { type ApiResponse, fail, varyOnCookie } from "./http.js";
+import { playerFor } from "./player.js";
 
 type Profile = {
   player: { id: string };
