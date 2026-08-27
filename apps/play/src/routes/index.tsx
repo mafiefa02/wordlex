@@ -1,10 +1,4 @@
-import {
-  LANGUAGES,
-  LANGUAGE_NAMES,
-  LENGTHS,
-  guessBudget,
-  wordlexDay,
-} from "@wordlex/domain";
+import { LANGUAGES, LANGUAGE_NAMES, LENGTHS, guessBudget, wordlexDay } from "@wordlex/domain";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { type } from "arktype";
 
@@ -33,7 +27,7 @@ function Home() {
   return (
     <main className="mx-auto max-w-xl p-8">
       <h1 className="text-2xl font-bold">WordleX</h1>
-      <p className="text-muted-foreground mt-1 text-sm">{wordlexDay()}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{wordlexDay()}</p>
 
       <nav className="mt-6 flex flex-wrap gap-3 text-sm">
         {LANGUAGES.map((language) => (
@@ -64,8 +58,7 @@ function Home() {
       </nav>
 
       <p className="mt-6 text-sm">
-        {LANGUAGE_NAMES[lang]} {length} — {guessBudget(length)} guesses. The board
-        goes here.
+        {LANGUAGE_NAMES[lang]} {length} — {guessBudget(length)} guesses. The board goes here.
       </p>
     </main>
   );

@@ -1,0 +1,29 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "react", "jsx-a11y"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn",
+    "style": "off"
+  },
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2024": true
+  },
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/.next/**",
+    "**/.output/**",
+    "**/.nitro/**",
+    "**/.tanstack/**",
+    "**/.turbo/**",
+    "apps/play/src/routeTree.gen.ts",
+    "apps/landing/next-env.d.ts",
+    ".intent/**"
+  ],
+  "rules": {
+    "react/react-in-jsx-scope": "off"
+  }
+}
