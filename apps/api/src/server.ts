@@ -1,5 +1,9 @@
 import { buildApp } from "./app";
 import { env } from "./env";
+import { logFatalExits } from "./logger";
+
+// Before the app exists, so a failure while it is being built is logged too.
+logFatalExits();
 
 const app = await buildApp();
 

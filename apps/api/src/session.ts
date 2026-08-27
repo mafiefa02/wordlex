@@ -55,19 +55,19 @@ export function gameIdsFromCookieHeader(header: string | undefined | null): stri
  * Presenting yesterday's, or another Track's, finds nothing rather than
  * attaching the request to a Game it was not issued for.
  *
- * `playerId` is who is asking, and undefined for nobody. **A token alone never
- * claims a Game that belongs to a Player.** Anonymous Games have no other claim,
- * so for those the token is the whole of it (ADR 0022) — but signing out leaves
- * twelve of them in the browser, still naming Games that are now somebody's, and
- * without this the next person at a shared computer could spend their Guesses
- * and lose their Daily. The cookies are left where they are; they simply stop
- * working, which is one check rather than a sign-out path that has to run.
+ * **A token never names a Game that belongs to a Player.** Only `gameForRequest`
+ * calls this, and only when nobody is signed in, so a Game with a `player_id` is
+ * always somebody else's here. Signing out leaves twelve tokens in the browser
+ * still naming Games that are now somebody's, and without this the next person
+ * at a shared computer could spend their Guesses and lose their Daily. The
+ * cookies are left where they are and simply stop working, which is one check
+ * rather than a sign-out path that has to run. An anonymous Game has no other
+ * claim, so for those the token is the whole of it (ADR 0022).
  */
-export async function gameFromToken(
+async function gameFromToken(
   tx: Transaction,
   request: FastifyRequest,
   today: Daily,
-  playerId: string | undefined,
 ): Promise<{ id: string; status: (typeof gameStatus.enumValues)[number] } | undefined> {
   const signed = request.cookies[cookieName(today.language, today.length)];
   const unsigned = signed === undefined ? undefined : request.unsignCookie(signed);
@@ -78,9 +78,35 @@ export async function gameFromToken(
     .from(game)
     .where(and(eq(game.id, unsigned.value), eq(game.dailyId, today.id)))
     .limit(1);
-  if (!found) return undefined;
-  if (found.playerId !== null && found.playerId !== playerId) return undefined;
+  if (!found || found.playerId !== null) return undefined;
   return { id: found.id, status: found.status };
+}
+
+/**
+ * The Game this request has on a Track today, whoever is asking.
+ *
+ * Signed in, that is found by Player id: the token is a convenience they can
+ * lose, and a device holding none must still show the Game they are playing
+ * (ADR 0025). Anonymously the token is the only claim there is (ADR 0022).
+ *
+ * One function, because the routes that ask must not disagree. A board that
+ * showed Guesses the Guess endpoint then refused to add to is the shape of that
+ * bug, and it is what a signed-in Player on a second device would have hit.
+ */
+export async function gameForRequest(
+  tx: Transaction,
+  request: FastifyRequest,
+  today: Daily,
+  playerId: string | undefined,
+) {
+  if (playerId === undefined) return gameFromToken(tx, request, today);
+
+  const [mine] = await tx
+    .select({ id: game.id, status: game.status })
+    .from(game)
+    .where(and(eq(game.playerId, playerId), eq(game.dailyId, today.id)))
+    .limit(1);
+  return mine;
 }
 
 /**

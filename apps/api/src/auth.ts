@@ -3,6 +3,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "./db";
 import { env } from "./env";
+import { logger } from "./logger";
 import { claimTodaysGames, playerFor } from "./player";
 import { gameIdsFromCookieHeader } from "./session";
 
@@ -83,7 +84,7 @@ async function onSignIn(
   try {
     playerId = await playerFor(db, session.userId);
   } catch (error) {
-    console.error("could not mint a Player on sign-in", error);
+    logger.error({ err: error, accountId: session.userId }, "could not mint a Player on sign-in");
     return;
   }
 
@@ -91,6 +92,6 @@ async function onSignIn(
     const cookies = context?.headers?.get("cookie") ?? context?.request?.headers.get("cookie");
     await claimTodaysGames(db, playerId, gameIdsFromCookieHeader(cookies));
   } catch (error) {
-    console.error("could not carry today's Games over on sign-in", error);
+    logger.error({ err: error, playerId }, "could not carry today's Games over on sign-in");
   }
 }

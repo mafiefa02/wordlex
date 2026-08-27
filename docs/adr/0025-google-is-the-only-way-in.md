@@ -31,14 +31,16 @@ rows.
 
 ## What a signed-in Player gets that an anonymous one does not
 
-**Their Game is found by who they are, not by what they hold.** `POST /game` looks a
-signed-in Player's Game up by `(player_id, daily_id)` and resumes it. Losing the Game token —
-a different browser, cleared site data, a phone — resumes the same Game rather than starting a
-second one, which `game_player_daily_key` would refuse anyway. Anonymously, the token *is* the
-claim and losing it loses the Game (ADR 0022).
+**Their Games are found by who they are, not by what they hold.** Every route that asks looks
+a signed-in Player's Game up by `(player_id, daily_id)`, through one function so they cannot
+disagree — a board that showed Guesses the Guess endpoint would then refuse is the bug that
+shape prevents. Losing the Game token — a different browser, cleared site data, a phone — reads
+and resumes the same Game rather than starting a second one, which `game_player_daily_key`
+would refuse anyway. Anonymously, the token *is* the claim and losing it loses the Game
+(ADR 0022).
 
-The Game token is still set for a signed-in Player, because `POST /guess` reads it and there
-was no reason to fork that path.
+The Game token is still set for a signed-in Player. It costs nothing and it is what the
+anonymous half of every route needs anyway.
 
 **The `Idempotency-Key` stops being a credential for them.** ADR 0024 requires a uuid on
 `POST /game` because the key is what a retry is recognised by, so anyone who can produce it

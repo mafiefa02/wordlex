@@ -44,7 +44,12 @@ export type ErrorCode =
    * contract over failures this app does not author.
    */
   | "REQUEST_REJECTED"
-  /** 401 — no Game token for this Track and today's Daily. */
+  /**
+   * 401 — there is no Game to attach this to. Anonymously that means no Game
+   * token for this Track and today's Daily; signed in it means they have not
+   * started this Track today. One code, because the client does the same thing
+   * either way: press Play.
+   */
   | "NO_GAME_TOKEN"
   /** 401 — the route is a Player's own history, and nobody is signed in. */
   | "NOT_SIGNED_IN"
@@ -63,7 +68,9 @@ export type ErrorCode =
   /** 500 — something broke. The reason is in the log, never in the response. */
   | "INTERNAL_ERROR"
   /** 503 — that Track has no Answer Pool, so it has no Daily to play. */
-  | "TRACK_UNAVAILABLE";
+  | "TRACK_UNAVAILABLE"
+  /** 503 — the database is unreachable. Only `/health` sends this. */
+  | "DATABASE_UNAVAILABLE";
 
 /** Builds a failure body. `details` is omitted rather than sent as null. */
 export function fail(code: ErrorCode, message: string, details?: unknown): ApiFailure {

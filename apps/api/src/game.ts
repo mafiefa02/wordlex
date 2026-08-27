@@ -7,7 +7,7 @@ import { type Board, type Daily, readBoard, todaysDaily } from "./board";
 import { db, game, guess } from "./db";
 import { type ApiResponse, fail, idempotencyKey } from "./http";
 import { playerFor } from "./player";
-import { gameFromToken, setGameToken } from "./session";
+import { gameForRequest, setGameToken } from "./session";
 
 const Body = type({
   language: type.enumerated(...LANGUAGES),
@@ -74,23 +74,12 @@ export function registerGame(app: FastifyInstance) {
         };
       }
 
-      // Who the request is decides what a resume even means. A signed-in Player
-      // has at most one Game per Daily and it is found by their Player id, so
-      // the token is a convenience they can lose. An anonymous Player *is* their
-      // token, and nothing else can name their Game (ADR 0022).
+      // Who the request is decides what a resume even means — see
+      // `gameForRequest`. Nobody signed in means a token naming a Player's Game
+      // is refused, and this starts a fresh anonymous one instead.
       const playerId = account ? await playerFor(tx, account.id) : undefined;
 
-      const resumed = playerId
-        ? (
-            await tx
-              .select({ id: game.id, status: game.status })
-              .from(game)
-              .where(and(eq(game.playerId, playerId), eq(game.dailyId, today.id)))
-              .limit(1)
-          )[0]
-        : // Nobody is signed in, so a token naming a Player's Game is refused and
-          // this starts a fresh anonymous one instead.
-          await gameFromToken(tx, request, today, undefined);
+      const resumed = await gameForRequest(tx, request, today, playerId);
 
       if (resumed) {
         // Only the signed-in half needs a token here: it was found by who they

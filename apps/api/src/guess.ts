@@ -8,7 +8,7 @@ import { type Board, readBoard, todaysDaily } from "./board";
 import { db, game, guess, unknownWordAttempt, word } from "./db";
 import { type ApiResponse, fail, idempotencyKey } from "./http";
 import { playerFor } from "./player";
-import { gameFromToken } from "./session";
+import { gameForRequest } from "./session";
 
 const Body = type({
   language: type.enumerated(...LANGUAGES),
@@ -110,16 +110,20 @@ export function registerGuess(app: FastifyInstance) {
         };
       }
 
-      // A Guess never starts a Game. Without a token naming a Game against
-      // today's Daily on this Track there is nothing to attach it to, and
-      // starting one here would let a browser that discarded its token
-      // silently restart the day (ADR 0022).
+      // A Guess never starts a Game. With no Game against today's Daily on this
+      // Track there is nothing to attach it to, and starting one here would let
+      // a browser that discarded its token silently restart the day (ADR 0022).
       const playerId = account ? await playerFor(tx, account.id) : undefined;
-      const held = await gameFromToken(tx, request, today, playerId);
+      const held = await gameForRequest(tx, request, today, playerId);
       if (!held) {
         return {
           code: 401,
-          body: fail("NO_GAME_TOKEN", "no Game token: press Play to start a Game"),
+          body: fail(
+            "NO_GAME_TOKEN",
+            playerId
+              ? "no Game on this Track today: press Play to start one"
+              : "no Game token: press Play to start a Game",
+          ),
         };
       }
 

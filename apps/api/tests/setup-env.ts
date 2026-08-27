@@ -8,6 +8,9 @@
 import { AUTH_SECRET, AUTH_URL, COOKIE_SECRET, ORIGIN, TEST_DATABASE_URL } from "./config";
 
 process.env.NODE_ENV = "test";
+// `buildApp()` with no options builds the real logger, which one test does on
+// purpose — see "boots with its own logger". Silent so it says nothing here.
+process.env.LOG_LEVEL = "silent";
 process.env.DATABASE_URL = TEST_DATABASE_URL;
 process.env.DIRECT_URL = TEST_DATABASE_URL;
 process.env.ALLOWED_ORIGINS = ORIGIN;

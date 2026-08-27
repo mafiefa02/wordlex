@@ -102,6 +102,14 @@ null is the flag review queries filter on, because evidence that cannot be
 attributed to a person is weaker for both ADR 0009's Candidate weights and ADR
 0012's Solve Rate.
 
+`GET /daily` is today across all twelve Tracks, which is what a home screen of
+twelve tiles needs and what twelve separate board reads were being used for. Per
+Track: whether it is `available` (a Track with no Answer Pool has no Daily — the
+single-Track route answers that with a 503, which a collection cannot do for one
+of its twelve), the `status`, and how many `guesses` have been spent. Not twelve
+boards: the tiles say whether there is something to carry on with, not what was
+typed. It creates nothing and issues all twelve Dailies in one statement.
+
 `GET /daily/:language/:length` is today's board for one Track: the WordleX Day,
 the Guesses so far with their Marks, and the Answer once the Game is over. It
 **creates nothing** — a visitor with no Game token gets an empty board, and only
@@ -211,9 +219,12 @@ Games this browser holds tokens for **today**, and nothing older (ADR 0027).
 Neither step can fail the sign-in itself: they run separately and log rather than
 throw, because a Player who cannot sign in has no app.
 
-A signed-in Player's Game is found by `(player_id, daily_id)` rather than by the
-Game token, so `POST /game` on a second device resumes the same Game instead of
-starting another. The token is still set, because `POST /guess` reads it.
+A signed-in Player's Games are found by `(player_id, daily_id)` rather than by
+the Game token, on **every** route that asks — `gameForRequest` in
+`src/session.ts` is the one place it is decided, so a board that showed Guesses
+the Guess endpoint would then refuse is not a shape this can take. A second
+device reads the board and can add to it without ever having held a token. The
+token is still set, because that is what an anonymous Player has.
 
 **A Game token never claims a Game that belongs to a Player.** Signing out leaves
 twelve of them in the browser, still naming Games that are now somebody's, so
@@ -248,6 +259,26 @@ set changed between two page loads. A Guess's response carries `data.badges` whe
 it earned any, at the two moments the set can change: the Guess that ends a Game,
 and a Game's *first* Guess — which is what makes it count as played, and so is
 what earns the four Badges about breadth (ADR 0026).
+
+## When something breaks
+
+One pino instance in `src/logger.ts`, used by Fastify and by better-auth's
+sign-in hook — the hook runs outside any route, so it has no `request.log`, and
+its two failure paths are exactly where a Player's Games silently failing to
+carry over would hide. `LOG_LEVEL` turns the volume up without a deploy.
+
+`logFatalExits()` runs before the app is built. Node kills the process on an
+unhandled rejection, and a server that dies between requests otherwise leaves
+nothing behind to say why. It logs and still exits — carrying on after an
+unknown failure is how a half-broken server stays up.
+
+`/health` answers only while the database answers, because a health check that
+says ok with the database unreachable is what an uptime monitor believes. It
+sends `503 DATABASE_UNAVAILABLE` otherwise.
+
+**No error tracker is wired up.** Everything goes to stdout as JSON, which the
+platform collects, and nothing alerts. Picking one sends data to a third party,
+so it is a decision rather than a default — see `docs/open-questions.md`.
 
 ## The database
 

@@ -2,13 +2,16 @@ import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import { type WordlexDay, wordlexDay } from "@wordlex/domain";
 import { fromNodeHeaders } from "better-auth/node";
+import { sql } from "drizzle-orm";
 import Fastify, { type FastifyError, type FastifyServerOptions } from "fastify";
 import { auth } from "./auth";
 import { registerDaily } from "./daily";
+import { db } from "./db";
 import { env } from "./env";
 import { registerGame } from "./game";
 import { registerGuess } from "./guess";
 import { type ApiSuccess, fail } from "./http";
+import { logger } from "./logger";
 import { registerMe } from "./me";
 
 /**
@@ -16,7 +19,13 @@ import { registerMe } from "./me";
  * `app.inject()` — importing `server.ts` would bind a port.
  */
 export async function buildApp(options: FastifyServerOptions = {}) {
-  const app = Fastify({ logger: true, ...options });
+  // `loggerInstance`, not `logger` — Fastify takes a *configuration object*
+  // under `logger` and an already-built pino under `loggerInstance`, and refuses
+  // the two together. So the shared instance goes in only when the caller has
+  // not asked for something else, which is how the tests stay silent.
+  const app = Fastify(
+    options.logger === undefined ? { loggerInstance: logger, ...options } : options,
+  );
 
   await app.register(cors, {
     origin: env.allowedOrigins,
@@ -73,9 +82,23 @@ export async function buildApp(options: FastifyServerOptions = {}) {
       : reply.code(500).send(fail("INTERNAL_ERROR", "something went wrong"));
   });
 
-  app.get("/health", (): ApiSuccess<{ ok: true; day: WordlexDay }> => ({
-    data: { ok: true, day: wordlexDay() },
-  }));
+  /**
+   * Answers only while the database answers. A health check that says ok with
+   * the database unreachable is worse than none at all — it is what an uptime
+   * monitor believes, and every other route here needs that connection.
+   */
+  app.get("/health", async (_request, reply) => {
+    try {
+      await db.execute(sql`select 1`);
+    } catch (error) {
+      app.log.error({ err: error }, "health check could not reach the database");
+      return reply.code(503).send(fail("DATABASE_UNAVAILABLE", "the database is not answering"));
+    }
+    const body: ApiSuccess<{ ok: true; day: WordlexDay }> = {
+      data: { ok: true, day: wordlexDay() },
+    };
+    return reply.code(200).send(body);
+  });
 
   /**
    * Signing in, signing out, and the Google redirect back (ADR 0025). This is

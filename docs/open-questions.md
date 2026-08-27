@@ -51,6 +51,12 @@ Every word-*quality* step is still either mechanical or deferred — see ADR 001
 
 **Profanity in Indonesian, Sundanese and Javanese.** No blocklist source exists for any of the three (ADR 0013). English is covered mechanically by LDNOOBW. This rides along with the pool review above.
 
+**Which error tracker, if any.** Everything is logged as structured JSON to stdout and the
+platform collects it; `logFatalExits()` makes sure a crash says why before it goes. Nothing
+alerts. Choosing Sentry or anything like it means sending errors — which carry request paths
+and sometimes cookies — to a third party, so it is a decision to take deliberately rather than
+a default to reach for at zero traffic.
+
 **Reading the Candidate queue.** ADR 0009 records Unknown Words from day one. Reading them can wait for an admin UI; the data accumulates either way, and nothing is lost by looking late.
 
 **Sharing an Account's sign-in with the play app.** The API mounts better-auth (ADR 0025) and
