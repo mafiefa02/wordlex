@@ -1,0 +1,1 @@
+CREATE INDEX "badge_award_badge_idx" ON "badge_award" USING btree ("badge");

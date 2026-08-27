@@ -1,5 +1,10 @@
 # Every Player is a row, and merging runs on sign-in as well as sign-up
 
+_Amended: ADR 0022 removes the anonymous Player, so the merge no longer has an anonymous
+side to run. `badge_award` in particular can never hold an anonymous row. The
+collision-then-repoint rule below still applies to whatever a future slice does decide to
+carry over._
+
 _Extends ADR 0007, which covered only sign-up._
 
 Everything that belongs to a Player — Games, Unknown Word attempts, anything added later — points at `player.id`. A `player` row carries a nullable, unique `account_id`; nothing points at better-auth's `user` table directly. The row is minted the first time someone actually starts a Game, never on page load, and the anonymous cookie holds a *signed* player id.

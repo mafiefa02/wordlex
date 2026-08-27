@@ -15,6 +15,27 @@
       "when": 1787822562443,
       "tag": "0001_reviewer_stamp",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787831975872,
+      "tag": "0002_perfect_spacker_dave",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787832622972,
+      "tag": "0003_wise_bishop",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787834758610,
+      "tag": "0004_futuristic_chronomancer",
+      "breakpoints": true
     }
   ]
 }

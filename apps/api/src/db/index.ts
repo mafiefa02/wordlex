@@ -11,4 +11,7 @@ const client = postgres(env.databaseUrl, { prepare: false });
 
 export const db = drizzle(client, { schema: { ...schema, ...authSchema } });
 
+/** What `db.transaction` hands its callback. Every query outside a route takes one. */
+export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 export * from "./schema";

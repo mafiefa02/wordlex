@@ -1,5 +1,10 @@
 # Anonymous players are real rows, and sign-up merges them
 
+_Amended again: ADR 0022 reverses this ADR's anonymous half. An anonymous visitor gets no
+`player` row at all — only a Game-scoped token — so there is nothing for sign-up to merge
+and the streak this ADR set out to protect does not survive it. What follows still holds
+for signed-in Players._
+
 _Amended: signing *in* has the same problem and was not covered here — see ADR 0020, which
 also closes the expiry question below. Anonymous Players are never expired._
 

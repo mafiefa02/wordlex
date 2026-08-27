@@ -4,11 +4,39 @@ Things deliberately left undecided, work that must happen before launch, and wor
 
 ## Deferred by choice
 
+**Whether a Game with no Guesses counts as Abandoned.** ADR 0022 makes `POST /game` the
+only thing that creates a Game, so pressing Play and walking away now leaves a row with zero
+Guesses — as does the losing half of two racing Play presses. Those are swept to `abandoned`
+at rollover alongside people who genuinely played and stopped, which is a much weaker thing.
+Excluding zero-Guess Games is one query away; nothing decides it yet.
+
+**What a Solve Rate is computed over, now that anonymous Games are cheap to make.** ADR 0022
+does not make replay a click — the token is `httpOnly` and `POST /game` resumes a finished
+Game — but clearing site data now costs a day rather than everything, and anything driving
+its own cookie jar replays freely. ADR 0012's "share of Games that were won" therefore leans
+on evidence that is easier to manufacture than it was. The flag to exclude anonymous Games
+exists; which way the query goes, and what to do at launch when almost every Game is
+anonymous, is not decided.
+
 **What a Difficulty is.** The word-length axis is settled (it is part of a Track). Difficulty is a separate axis and is still undefined. Three readings were on the table — a rules ladder applied to the same word, a smaller guess budget, or harder words drawn from a different slice of the pool. Only the third multiplies Answer Pool consumption, which matters because Sundanese 5-letter has under a year of runway.
 
 **Whether an Abandoned Game counts against a word.** ADR 0012's Solve Rate is the share of Games *won*. Someone who walked away after one Guess is much weaker evidence about an Answer than someone who spent every Guess, so ADR 0019 stores Abandoned distinctly from a loss and leaves the denominator open. Streaks are unaffected — `CONTEXT.md` counts days played.
 
 **What a Streak counts.** One number across all twelve Tracks, or one per language; and whether losing breaks it or only absence does. ADR 0008 keeps the data shaped so either can be derived later, including retroactively.
+
+**Whether starting a Game needs a challenge in front of it.** `POST /game`
+(ADRs 0021, 0022) is deliberately ungated. A script can therefore start anonymous Games at
+will, one extra request each, and ADR 0009 weights its Candidate review queue by how many
+distinct people typed a word — counted per Game where the Player is unknown. So that weight
+is forgeable, which is a gap in ADR 0009's reasoning rather than something the schema
+catches. ADR 0022's `player_id is null` flag makes the forgeable half *visible*, which is
+what lets a reviewer exclude it, but it does not make it trustworthy. ADR 0010
+declined rate limiting while reasoning about the guess endpoint and about
+learning the Answer; this is a different attack it did not consider. Only a
+challenge (Turnstile or similar) actually stops it — per-IP limits hit Indonesian
+carrier NAT first, which ADR 0010 warns about by name. Left open on purpose:
+at zero traffic there is no way to tell a script from a launch. The split into
+its own endpoint is what makes gating cheap when it is time.
 
 ## Launch gates
 
