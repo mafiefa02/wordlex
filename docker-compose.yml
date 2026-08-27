@@ -1,0 +1,26 @@
+# The local database. One container on Supabase's own Postgres image, so the
+# extensions we depend on — pg_cron above all (ADR 0019) — are the same ones
+# production has. The full Supabase CLI stack would also give us Studio and the
+# rest, and we do not use any of it: `apps/api` reaches Postgres directly.
+services:
+  db:
+    image: supabase/postgres:17.6.1.166
+    container_name: wordlex-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: postgres
+      # pg_cron installs into exactly one database, named at server start. The
+      # jobs have to live in the same one the app connects to.
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - wordlex-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  wordlex-db:

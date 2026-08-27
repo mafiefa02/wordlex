@@ -68,6 +68,10 @@ _Avoid_: today, date, day (unqualified)
 The one Answer issued to a Track for a given WordleX Day. Every player on that Track gets the same one.
 _Avoid_: puzzle, today's word, round
 
+**Rotation**:
+One pass through a Track's Answer Pool. A word is the Answer at most once per Rotation; when the pool is used up the next Rotation begins, so how often a word has come up is how many Rotations it appears in.
+_Avoid_: cycle, pass, reshuffle, round
+
 **Game**:
 One Player's attempt at one Daily — word length plus one Guesses, ending in a win, a loss, or Abandoned.
 _Avoid_: session, play, round, match
@@ -96,6 +100,7 @@ _Avoid_: achievement, trophy, award
 - Enough distinct **Players** submitting the same **Unknown Word** makes it a **Candidate**; only a human turns a **Candidate** into a **Dictionary** entry
 - A low **Solve Rate** flags an **Answer Pool** word for review; it never removes one
 - A **Track** has exactly one **Daily** per **WordleX Day**; a **Player** has at most one **Game** per **Daily**
+- Every **Daily** belongs to one **Rotation**; a word is the **Answer** once per **Rotation**, and the **Answer Pool** starts again rather than running out
 - All twelve **Dailies** are open every **WordleX Day** — a **Player** may play as many as they like
 - A **Game** ends in a win, a loss, or **Abandoned**; only a win and a loss are evidence about the **Answer**
 - An **Account** owns one **Player**; a **Player** may exist without an **Account**

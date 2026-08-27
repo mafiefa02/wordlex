@@ -1,5 +1,10 @@
 # Dailies are issued ahead of time and frozen once they are live
 
+_Amended: an exhausted Answer Pool no longer leaves a Track with no Daily. The pool starts
+again as the next Rotation, recorded on `daily.rotation`, so "no repeats until the pool is
+genuinely exhausted" below now means no repeats within a Rotation. How often a word has come
+up and which Rotations it appeared in are queries against that column, not stored counters._
+
 A `daily` row holds the Answer for one `(language, length, day)`, unique on exactly that. A `pg_cron` job at 00:00 WIB tops the buffer back up to seven days ahead. Once a WordleX Day has started, its row can never be changed.
 
 ## Why the Answer is written down rather than computed

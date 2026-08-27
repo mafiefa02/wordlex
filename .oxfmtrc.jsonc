@@ -11,6 +11,8 @@
     "**/.tanstack/**",
     "**/.turbo/**",
     "apps/play/src/routeTree.gen.ts",
+    // drizzle-kit rewrites its snapshots on every generate.
+    "apps/api/drizzle/meta/**",
     "apps/landing/next-env.d.ts",
     ".intent/**",
   ],

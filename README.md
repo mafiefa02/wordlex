@@ -9,9 +9,14 @@ Start with `CONTEXT.md` for the vocabulary, `docs/adr/` for the decisions, and
 
 ```sh
 pnpm install
+docker compose up -d --wait
 cp apps/api/.env.example apps/api/.env
+pnpm --filter @wordlex/api db:migrate
 pnpm dev
 ```
+
+`docker compose` runs one Postgres container on Supabase's image, so `pg_cron`
+is the same one production has (ADR 0019).
 
 - Landing page — http://localhost:3000
 - Play — http://localhost:3001
