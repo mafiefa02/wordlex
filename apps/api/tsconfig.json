@@ -7,7 +7,13 @@
     // `types` were silently lost there, so `Response` stopped being the Web one
     // and the deploy failed on a file that type-checks clean locally.
     "target": "ES2022",
-    "lib": ["ES2022"],
+    // DOM is here for `Request`, `Response` and `Headers` — the Web types the
+    // better-auth handler is declared with. Node supplies them at runtime and
+    // `@types/node` declares them through `undici-types`, but that indirection
+    // resolved to an empty `Response` under Vercel's type-check and broke the
+    // deploy. TypeScript's own lib cannot fail to resolve. The cost is that
+    // `window` and `document` type-check in server code; nothing here uses them.
+    "lib": ["ES2022", "DOM"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "types": ["node"],
