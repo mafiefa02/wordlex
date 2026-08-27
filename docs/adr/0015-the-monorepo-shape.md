@@ -1,5 +1,10 @@
 # The monorepo shape, and what may not be shared
 
+_Amended: the Dictionary and Answer Pool are Postgres rows, not files — ADR 0018. They still
+belong to `apps/api`, but the rule is now enforced by who holds the connection string rather
+than by `apps/play` being unable to read a file. Amended again: the WordleX Day maths has one
+deliberate second copy, a `wordlex_day()` SQL function — ADR 0019 says why._
+
 One pnpm workspace, driven by Turborepo, holding three apps and two shared packages:
 
 | Path | What it is | Port in dev |

@@ -2,6 +2,14 @@
 
 _Decided during the design session; written up afterwards, which is why the ADR that depends on it (0010) is numbered before it._
 
+_Amended: Badges are derived from Game rows as described, but a small `badge_award` ledger is
+written when a Game finishes so the play app can show a "you just earned this" toast — nothing
+otherwise knows the set changed between two page loads. The ledger is a cache of the derived
+set, not the source of truth, so a Badge added later still awards retroactively. Separately,
+`guess` does carry a timestamp after all; "adds no tracking" below is no longer literally true,
+and the defence is the one this ADR already makes — no Badge rewards speed, so the column is
+inert._
+
 Badges are earned for showing up and for reaching across languages: run-lengths, "played all four languages in one day", "a week of Javanese", "first Sundanese win". Not for solving fast, and not for win-rate ladders per language.
 
 Two alternatives were rejected.

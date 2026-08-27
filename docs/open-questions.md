@@ -6,11 +6,15 @@ Things deliberately left undecided, work that must happen before launch, and wor
 
 **What a Difficulty is.** The word-length axis is settled (it is part of a Track). Difficulty is a separate axis and is still undefined. Three readings were on the table — a rules ladder applied to the same word, a smaller guess budget, or harder words drawn from a different slice of the pool. Only the third multiplies Answer Pool consumption, which matters because Sundanese 5-letter has under a year of runway.
 
+**Whether an Abandoned Game counts against a word.** ADR 0012's Solve Rate is the share of Games *won*. Someone who walked away after one Guess is much weaker evidence about an Answer than someone who spent every Guess, so ADR 0019 stores Abandoned distinctly from a loss and leaves the denominator open. Streaks are unaffected — `CONTEXT.md` counts days played.
+
 **What a Streak counts.** One number across all twelve Tracks, or one per language; and whether losing breaks it or only absence does. ADR 0008 keeps the data shaped so either can be derived later, including retroactively.
 
 ## Launch gates
 
-None. Every word-quality step is either mechanical or deferred — see ADR 0013's "What actually ships".
+**The word pipeline.** `scripts/build-words.mjs` has to come back (ADR 0018). It fetches ADR 0004's sources, applies the four mechanical filters ADR 0013 says actually ship, and writes the committed CSV that seeds the `word` table. Nothing is playable until it has run. It is recoverable from `ba775eb`, but it has never emitted rows, so the output shape is new work — and realistically this is the larger half of the remaining unknowns, not the schema.
+
+Every word-*quality* step is still either mechanical or deferred — see ADR 0013's "What actually ships".
 
 ## Deliberately after launch
 

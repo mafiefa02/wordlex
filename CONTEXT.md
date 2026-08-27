@@ -69,8 +69,12 @@ The one Answer issued to a Track for a given WordleX Day. Every player on that T
 _Avoid_: puzzle, today's word, round
 
 **Game**:
-One Player's attempt at one Daily — word length plus one Guesses, ending in a win or a loss.
+One Player's attempt at one Daily — word length plus one Guesses, ending in a win, a loss, or Abandoned.
 _Avoid_: session, play, round, match
+
+**Abandoned**:
+A Game left unfinished when its WordleX Day ended. Distinct from a loss, which spent every Guess.
+_Avoid_: DNF, incomplete, expired, timed out
 
 ### Progress
 
@@ -93,6 +97,7 @@ _Avoid_: achievement, trophy, award
 - A low **Solve Rate** flags an **Answer Pool** word for review; it never removes one
 - A **Track** has exactly one **Daily** per **WordleX Day**; a **Player** has at most one **Game** per **Daily**
 - All twelve **Dailies** are open every **WordleX Day** — a **Player** may play as many as they like
+- A **Game** ends in a win, a loss, or **Abandoned**; only a win and a loss are evidence about the **Answer**
 - An **Account** owns one **Player**; a **Player** may exist without an **Account**
 
 ## Example dialogue
@@ -119,4 +124,5 @@ _Avoid_: achievement, trophy, award
 - "day" is ambiguous across timezones — resolved: always say **WordleX Day**, which is fixed to WIB.
 - "invalid word" implied the Player was wrong — resolved: it is an **Unknown Word**, because with Dictionaries this thin the list is at least as likely to be at fault as the Player.
 - "user" was used for both the **Player** and the **Account** — resolved: these are distinct, because a **Player** can exist with no **Account** at all.
+- "account" collides with better-auth once it is in the schema — resolved: better-auth's `user` table *is* the **Account**, and its `account` table is something else entirely, being one linked sign-in credential such as "signs in via Google". The vendor tables keep their own names; **Account** keeps its meaning here.
 - **Streak** scope is deliberately undecided — whether it is one number across all **Tracks** or one per language, and whether losing breaks it, are open. The data is stored so either can be derived later.
