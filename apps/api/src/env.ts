@@ -8,15 +8,11 @@ const Env = type({
   // it for local dev, where plain http means Secure cannot be on.
   "NODE_ENV?": "string",
   // Browsers send credentials to this API, so the allowlist is explicit —
-  // never a wildcard (ADR 0006).
-  ALLOWED_ORIGINS: type("string")
-    .pipe((value) =>
-      value
-        .split(",")
-        .map((origin) => origin.trim())
-        .filter(Boolean),
-    )
-    .to("string[] > 0"),
+  // never a wildcard (ADR 0006). Split below in plain TypeScript rather than
+  // with a `.pipe().to()` morph: the morph's inferred output was the one thing
+  // in this file that Vercel's type-check resolved differently from ours, and a
+  // comma-separated list does not need a schema language to express.
+  ALLOWED_ORIGINS: "string > 0",
   // The app's connection, through Supavisor in transaction mode (ADR 0006).
   DATABASE_URL: "string > 0",
   // A direct connection on 5432, for migrations and seeding. Transaction-mode
@@ -48,12 +44,23 @@ if (parsed instanceof type.errors) {
   throw new Error(`Bad environment:\n${parsed.summary}`);
 }
 
+const allowedOrigins = parsed.ALLOWED_ORIGINS.split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+// Checked at boot rather than left to the first request: an API that rejects
+// every browser is a worse failure than one that refuses to start, because it
+// looks like the browser's fault (ADR 0006).
+if (allowedOrigins.length === 0) {
+  throw new Error("Bad environment:\n  ALLOWED_ORIGINS lists no origins");
+}
+
 export const env = {
   port: parsed.PORT ?? 4000,
   // Fails closed on purpose. The other way round, one deploy with NODE_ENV
   // unset ships the token that *is* a Game's only claim over plain http.
   secureCookies: parsed.NODE_ENV !== "development" && parsed.NODE_ENV !== "test",
-  allowedOrigins: parsed.ALLOWED_ORIGINS,
+  allowedOrigins,
   databaseUrl: parsed.DATABASE_URL,
   directUrl: parsed.DIRECT_URL,
   cookieSecret: parsed.COOKIE_SECRET,
