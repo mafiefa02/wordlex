@@ -4,6 +4,13 @@ _Reverses the anonymous half of ADR 0007 and ADR 0020, and replaces `POST /playe
 ADR 0021 with `POST /game`. A **Player** now means a signed-in Player. Everything those
 ADRs say about Accounts, and ADR 0021's Origin check, still stands._
 
+_Amended by ADR 0024: "Two Play presses racing each other do make two Games… The client
+must not fire concurrent starts" below is now conditional. Both `POST /game` and
+`POST /guess` require an `Idempotency-Key`, and two starts carrying the same one collapse
+into a single Game. The reasoning below is still why — there is no cookie yet and nulls are
+distinct in `game_player_daily_key`, so nothing on the server can join two presses — but the
+client can now join them itself, and a retry after a lost response is covered too._
+
 An anonymous visitor no longer gets a `player` row. They get a **Game token**: a signed
 Game id in a cookie, one per Track, good only for the Game it names and only while that
 Game's WordleX Day lasts. `game.player_id` is null for those Games.

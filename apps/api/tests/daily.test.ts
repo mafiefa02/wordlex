@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { daily, db, game } from "../src/db";
-import { board, browser } from "./helpers";
+import { board, browser, failure } from "./helpers";
 
 describe("GET /daily/:language/:length", () => {
   it("gives a visitor an empty board and starts nothing", async () => {
@@ -33,11 +33,15 @@ describe("GET /daily/:language/:length", () => {
   });
 
   it("refuses a Track that does not exist", async () => {
-    expect((await browser().get("/daily/en/4")).statusCode).toBe(400);
+    const response = await browser().get("/daily/en/4");
+    expect(response.statusCode).toBe(400);
+    expect(failure(response).code).toBe("VALIDATION_ERROR");
     expect((await browser().get("/daily/fr/5")).statusCode).toBe(400);
   });
 
   it("says so when a Track has no Answer Pool", async () => {
-    expect((await browser().get("/daily/id/6")).statusCode).toBe(503);
+    const response = await browser().get("/daily/id/6");
+    expect(response.statusCode).toBe(503);
+    expect(failure(response).code).toBe("TRACK_UNAVAILABLE");
   });
 });

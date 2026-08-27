@@ -1,13 +1,32 @@
 import { wordlexDay } from "@wordlex/domain";
 import { describe, expect, it } from "vitest";
 import { db, game } from "../src/db";
-import { browser } from "./helpers";
+import { ORIGIN } from "./config";
+import { api, browser, failure } from "./helpers";
 
 describe("the server", () => {
   it("answers /health with the WordleX Day", async () => {
     const response = await browser().get("/health");
     expect(response.statusCode).toBe(200);
-    expect(JSON.parse(response.body)).toEqual({ ok: true, day: wordlexDay() });
+    expect(JSON.parse(response.body)).toEqual({ data: { ok: true, day: wordlexDay() } });
+  });
+
+  it("answers a route nobody wrote in the same shape as one somebody did", async () => {
+    const response = await browser().get("/nope");
+    expect(response.statusCode).toBe(404);
+    expect(failure(response).code).toBe("NOT_FOUND");
+  });
+
+  it("puts a request Fastify itself refused in the envelope too", async () => {
+    const response = await api.inject({
+      method: "POST",
+      url: "/game",
+      headers: { origin: ORIGIN, "content-type": "application/json" },
+      payload: "{",
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(failure(response).code).toBe("REQUEST_REJECTED");
   });
 
   it("tells every cache to keep nothing", async () => {
@@ -20,6 +39,7 @@ describe("the Origin check", () => {
   it("refuses a write with no Origin, and starts nothing", async () => {
     const response = await browser().post("/game", { language: "en", length: 5 }, {});
     expect(response.statusCode).toBe(403);
+    expect(failure(response).code).toBe("ORIGIN_NOT_ALLOWED");
     expect(await db.select().from(game)).toHaveLength(0);
   });
 

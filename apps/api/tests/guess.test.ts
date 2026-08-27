@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { db, game, guess, unknownWordAttempt, word } from "../src/db";
-import { ANSWER, board, browser, WRONG_EN5 } from "./helpers";
+import { ANSWER, board, browser, failure, withKey, WRONG_EN5 } from "./helpers";
 
 /** A browser part-way through today's English-5 Game. */
 async function playing() {
@@ -19,6 +19,7 @@ describe("POST /guess", () => {
     const response = await submit(browser(), "creak");
 
     expect(response.statusCode).toBe(401);
+    expect(failure(response).code).toBe("NO_GAME_TOKEN");
     expect(await db.select().from(game)).toHaveLength(0);
     expect(await db.select().from(guess)).toHaveLength(0);
   });
@@ -27,7 +28,7 @@ describe("POST /guess", () => {
     const response = await browser().post(
       "/guess",
       { language: "en", length: 5, word: "creak" },
-      { origin: "http://localhost:3001", cookie: `wordlex_game_en_5=${randomUUID()}` },
+      { ...withKey(randomUUID()), cookie: `wordlex_game_en_5=${randomUUID()}` },
     );
     expect(response.statusCode).toBe(401);
   });
@@ -39,7 +40,7 @@ describe("POST /guess", () => {
       "/guess",
       { language: "su", length: 5, word: "maneh" },
       {
-        origin: "http://localhost:3001",
+        ...withKey(randomUUID()),
         cookie: `wordlex_game_su_5=${player.cookies.wordlex_game_en_5}`,
       },
     );
@@ -49,7 +50,9 @@ describe("POST /guess", () => {
   it("stops a word that is the wrong shape before the Dictionary sees it", async () => {
     const player = await playing();
 
-    expect((await submit(player, "abcd")).statusCode).toBe(400);
+    const wrongLength = await submit(player, "abcd");
+    expect(wrongLength.statusCode).toBe(400);
+    expect(failure(wrongLength).code).toBe("MALFORMED_WORD");
     expect((await submit(player, "12345")).statusCode).toBe(400);
     // Nothing that fails this check is an Unknown Word (ADR 0009).
     expect(await db.select().from(unknownWordAttempt)).toHaveLength(0);
@@ -59,7 +62,7 @@ describe("POST /guess", () => {
     const player = await playing();
     const response = await submit(player, "creak");
 
-    expect(JSON.parse(response.body).outcome).toBe("scored");
+    expect(JSON.parse(response.body).data.outcome).toBe("scored");
     expect(board(response).guesses).toEqual([
       { word: "creak", marks: ["absent", "absent", "exact", "exact", "absent"] },
     ]);
@@ -73,7 +76,7 @@ describe("POST /guess", () => {
     await player.post("/game", { language: "su", length: 5 });
     const response = await player.post("/guess", { language: "su", length: 5, word: "MANÉH" });
 
-    expect(JSON.parse(response.body).outcome).toBe("scored");
+    expect(JSON.parse(response.body).data.outcome).toBe("scored");
     expect(board(response).status).toBe("won");
   });
 
@@ -90,7 +93,7 @@ describe("POST /guess", () => {
     const response = await submit(player, "zzzzz");
 
     expect(response.statusCode).toBe(200);
-    expect(JSON.parse(response.body).outcome).toBe("unknown_word");
+    expect(JSON.parse(response.body).data.outcome).toBe("unknown_word");
     expect(board(response).guesses).toHaveLength(0);
     expect(await db.select().from(guess)).toHaveLength(0);
 
@@ -154,6 +157,10 @@ describe("POST /guess", () => {
     const response = await submit(player, "creak");
 
     expect(response.statusCode).toBe(409);
+    expect(failure(response).code).toBe("GAME_OVER");
+    // The one failure that carries a board, so the client can render the
+    // finished Game without asking again.
+    expect(failure(response).details.game).toMatchObject({ status: "won", answer: ANSWER.en5 });
     expect(await db.select().from(guess)).toHaveLength(1);
   });
 
@@ -173,6 +180,91 @@ describe("POST /guess", () => {
     expect(board(won)).toMatchObject({ status: "won", answer: ANSWER.jv7 });
   });
 
+  it("refuses a submission with no Idempotency-Key", async () => {
+    const player = await playing();
+    const response = await player.post(
+      "/guess",
+      { language: "en", length: 5, word: "creak" },
+      { origin: "http://localhost:3001" },
+    );
+
+    expect(response.statusCode).toBe(400);
+    expect(failure(response).code).toBe("IDEMPOTENCY_KEY_REQUIRED");
+    expect(await db.select().from(guess)).toHaveLength(0);
+  });
+
+  it("spends one row when a submission is retried under the same key", async () => {
+    const player = await playing();
+    const key = randomUUID();
+    const first = await player.post(
+      "/guess",
+      { language: "en", length: 5, word: "creak" },
+      withKey(key),
+    );
+    const retry = await player.post(
+      "/guess",
+      { language: "en", length: 5, word: "creak" },
+      withKey(key),
+    );
+
+    expect(retry.statusCode).toBe(200);
+    expect(JSON.parse(retry.body).data.outcome).toBe("scored");
+    expect(board(retry).guesses).toEqual(board(first).guesses);
+    expect(await db.select().from(guess)).toHaveLength(1);
+  });
+
+  // The response a client most needs to recover, and the one an ordering mistake
+  // loses: a retry lands on a Game that is no longer `playing`, so a status check
+  // ahead of the key would answer it with GAME_OVER.
+  it("replays the winning Guess rather than calling the Game over", async () => {
+    const player = await playing();
+    const key = randomUUID();
+    await player.post("/guess", { language: "en", length: 5, word: ANSWER.en5 }, withKey(key));
+    const retry = await player.post(
+      "/guess",
+      { language: "en", length: 5, word: ANSWER.en5 },
+      withKey(key),
+    );
+
+    expect(retry.statusCode).toBe(200);
+    expect(JSON.parse(retry.body).data.outcome).toBe("scored");
+    expect(board(retry)).toMatchObject({ status: "won", answer: ANSWER.en5 });
+    expect(await db.select().from(guess)).toHaveLength(1);
+  });
+
+  it("refuses a key that comes back naming a different word", async () => {
+    const player = await playing();
+    const key = randomUUID();
+    await player.post("/guess", { language: "en", length: 5, word: "creak" }, withKey(key));
+    const reused = await player.post(
+      "/guess",
+      { language: "en", length: 5, word: "sells" },
+      withKey(key),
+    );
+
+    expect(reused.statusCode).toBe(422);
+    expect(failure(reused).code).toBe("IDEMPOTENCY_KEY_REUSED");
+    expect(await db.select().from(guess)).toHaveLength(1);
+  });
+
+  // The reuse check sits ahead of the status check as well as ahead of the
+  // scoring, so a client bug reads as a client bug whatever state the Game is in.
+  it("refuses a reused key even once the Game is over", async () => {
+    const player = await playing();
+    const key = randomUUID();
+    await player.post("/guess", { language: "en", length: 5, word: "creak" }, withKey(key));
+    await player.post("/guess", { language: "en", length: 5, word: ANSWER.en5 });
+
+    const reused = await player.post(
+      "/guess",
+      { language: "en", length: 5, word: "sells" },
+      withKey(key),
+    );
+
+    expect(reused.statusCode).toBe(422);
+    expect(failure(reused).code).toBe("IDEMPOTENCY_KEY_REUSED");
+  });
+
   it("says so when a Track has no Answer Pool", async () => {
     const response = await browser().post("/guess", {
       language: "id",
@@ -180,5 +272,6 @@ describe("POST /guess", () => {
       word: "kucing",
     });
     expect(response.statusCode).toBe(503);
+    expect(failure(response).code).toBe("TRACK_UNAVAILABLE");
   });
 });

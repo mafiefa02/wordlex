@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { Language, Length } from "@wordlex/domain";
 import { sql } from "drizzle-orm";
 import type { InjectOptions, LightMyRequestResponse } from "fastify";
@@ -75,8 +76,10 @@ export async function resetDatabase() {
  * sends them back on the next call, which is the whole of what makes a Game
  * resumable (ADR 0022). Two browsers are two of these.
  *
- * POSTs carry the allowlisted `Origin` by default, since the server refuses
- * writes without one.
+ * POSTs carry the allowlisted `Origin` and a fresh `Idempotency-Key` by default,
+ * since the server refuses writes without either. A test that cares about the key
+ * — a retry, or a key reused for something else — passes its own headers, which
+ * replace these rather than merging with them.
  */
 export function browser() {
   const cookies: Record<string, string> = {};
@@ -90,8 +93,11 @@ export function browser() {
   return {
     cookies,
     get: (url: string) => send({ method: "GET", url }),
-    post: (url: string, payload: Payload, headers: Record<string, string> = { origin: ORIGIN }) =>
-      send({ method: "POST", url, payload, headers }),
+    post: (
+      url: string,
+      payload: Payload,
+      headers: Record<string, string> = { origin: ORIGIN, "idempotency-key": randomUUID() },
+    ) => send({ method: "POST", url, payload, headers }),
   };
 }
 
@@ -99,4 +105,10 @@ export function browser() {
 type Payload = NonNullable<InjectOptions["payload"]>;
 
 /** The board every response carries, once the response is known to be a 200. */
-export const board = (response: LightMyRequestResponse) => JSON.parse(response.body).game;
+export const board = (response: LightMyRequestResponse) => JSON.parse(response.body).data.game;
+
+/** Headers for a write that must reuse a key — a retry, or a client bug. */
+export const withKey = (key: string) => ({ origin: ORIGIN, "idempotency-key": key });
+
+/** The failure a response carries, which is always `{ code, message, details? }`. */
+export const failure = (response: LightMyRequestResponse) => JSON.parse(response.body).error;

@@ -140,9 +140,21 @@ export const game = pgTable(
       .notNull()
       .references(() => daily.id, { onDelete: "restrict" }),
     status: gameStatus("status").default("playing").notNull(),
+    /**
+     * The key the client sent when it pressed Play (ADR 0024). This is the only
+     * thing that can collapse two starts into one Game: there is no cookie yet
+     * — this request is what issues it — and `game_player_daily_key` does not
+     * constrain a null `player_id`, so nothing else identifies the presser.
+     */
+    idempotencyKey: text("idempotency_key").notNull(),
     createdAt,
   },
   (table) => [
+    // Scoped to the Daily, not global: a key names "start this Track today", so
+    // the same key on another Track is a different intent and gets its own Game.
+    // This is also the constraint that decides the winner between two presses
+    // arriving together — there is no row to lock on, so the insert is the claim.
+    unique("game_daily_idempotency_key").on(table.dailyId, table.idempotencyKey),
     // One Game per Player per Daily still holds for a signed-in Player. Postgres
     // treats nulls as distinct, so anonymous Games are not constrained by this —
     // there is no identity to constrain them by, which is the trade ADR 0022
@@ -171,9 +183,22 @@ export const guess = pgTable(
       .references(() => game.id, { onDelete: "cascade" }),
     position: smallint("position").notNull(),
     word: text("word").notNull(),
+    /**
+     * The key the client sent with this submission (ADR 0024). Without it a
+     * request that timed out and was retried takes a second row against the same
+     * intent — the `for update` lock in the handler stops two submissions racing,
+     * which is a different problem and does not help a retry at all.
+     */
+    idempotencyKey: text("idempotency_key").notNull(),
     createdAt,
   },
-  (table) => [unique("guess_game_position_key").on(table.gameId, table.position)],
+  (table) => [
+    unique("guess_game_position_key").on(table.gameId, table.position),
+    // Scoped to the Game for the same reason `game`'s is scoped to the Daily: a
+    // key names one submission against one Game. It is also what makes the
+    // handler's read-then-insert safe, since the Game row is locked across both.
+    unique("guess_game_idempotency_key").on(table.gameId, table.idempotencyKey),
+  ],
 );
 
 /**

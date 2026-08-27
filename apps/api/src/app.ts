@@ -1,11 +1,12 @@
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
-import { wordlexDay } from "@wordlex/domain";
-import Fastify, { type FastifyServerOptions } from "fastify";
+import { type WordlexDay, wordlexDay } from "@wordlex/domain";
+import Fastify, { type FastifyError, type FastifyServerOptions } from "fastify";
 import { registerDaily } from "./daily";
 import { env } from "./env";
 import { registerGame } from "./game";
 import { registerGuess } from "./guess";
+import { type ApiSuccess, fail } from "./http";
 
 /**
  * The whole API, minus listening. Split out so the tests can drive it through
@@ -42,11 +43,36 @@ export async function buildApp(options: FastifyServerOptions = {}) {
     }
     const origin = request.headers.origin;
     if (origin === undefined || !env.allowedOrigins.includes(origin)) {
-      return reply.code(403).send({ error: "origin not allowed" });
+      return reply
+        .code(403)
+        .send(fail("ORIGIN_NOT_ALLOWED", "a write needs an allowlisted Origin header"));
     }
   });
 
-  app.get("/health", () => ({ ok: true, day: wordlexDay() }));
+  // A route nobody wrote, and a throw nobody caught, are responses too — and
+  // without these two they would be Fastify's own `{ statusCode, error, message }`
+  // instead of the envelope every handler here sends. That is the whole gap the
+  // convention exists to close.
+  app.setNotFoundHandler((request, reply) =>
+    reply.code(404).send(fail("NOT_FOUND", `no route for ${request.method} ${request.url}`)),
+  );
+
+  app.setErrorHandler((error: FastifyError, request, reply) => {
+    request.log.error(error);
+    const status = error.statusCode ?? 500;
+    // Fastify's own refusals land here too — a malformed JSON body, an
+    // unsupported content type — and those carry a 4xx worth passing on as it is.
+    // They all get one code rather than a guessed one: a code that named a status
+    // would sooner or later contradict the status it was sent with. A 5xx is ours,
+    // and its reason stays in the log rather than going to the browser.
+    return status >= 400 && status < 500
+      ? reply.code(status).send(fail("REQUEST_REJECTED", error.message))
+      : reply.code(500).send(fail("INTERNAL_ERROR", "something went wrong"));
+  });
+
+  app.get("/health", (): ApiSuccess<{ ok: true; day: WordlexDay }> => ({
+    data: { ok: true, day: wordlexDay() },
+  }));
 
   registerGame(app);
   registerDaily(app);

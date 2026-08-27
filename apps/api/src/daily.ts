@@ -1,8 +1,9 @@
 import { LANGUAGES, LENGTHS } from "@wordlex/domain";
 import { type } from "arktype";
 import type { FastifyInstance } from "fastify";
-import { readBoard, todaysDaily } from "./board";
+import { type Board, readBoard, todaysDaily } from "./board";
 import { db } from "./db";
+import { type ApiResponse, fail } from "./http";
 import { gameFromToken } from "./session";
 
 // Path params arrive as strings, so `length` is parsed before it is checked
@@ -11,6 +12,12 @@ const Params = type({
   language: type.enumerated(...LANGUAGES),
   length: type("string.integer.parse").to(type.enumerated(...LENGTHS)),
 });
+
+/**
+ * Everything this route can send, so a response that drifts out of the envelope
+ * (ADR 0023) is a type error rather than something a test has to notice.
+ */
+type Sent = { code: number; body: ApiResponse<{ game: Board }> };
 
 export function registerDaily(app: FastifyInstance) {
   /**
@@ -21,7 +28,7 @@ export function registerDaily(app: FastifyInstance) {
   app.get("/daily/:language/:length", async (request, reply) => {
     const params = Params(request.params);
     if (params instanceof type.errors) {
-      return reply.code(400).send({ error: params.summary });
+      return reply.code(400).send(fail("VALIDATION_ERROR", params.summary));
     }
 
     const { language, length } = params;
@@ -34,12 +41,15 @@ export function registerDaily(app: FastifyInstance) {
     const vary = reply.getHeader("Vary");
     reply.header("Vary", vary === undefined ? "Cookie" : `${String(vary)}, Cookie`);
 
-    const result = await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx): Promise<Sent> => {
       const today = await todaysDaily(tx, language, length);
       if (!today) {
         return {
           code: 503,
-          body: { error: `no Daily for ${language}-${length}: that Track has no Answer Pool` },
+          body: fail(
+            "TRACK_UNAVAILABLE",
+            `no Daily for ${language}-${length}: that Track has no Answer Pool`,
+          ),
         };
       }
 
@@ -47,7 +57,7 @@ export function registerDaily(app: FastifyInstance) {
       // Track today" — an empty board, and nothing is created to say so.
       const held = await gameFromToken(tx, request, today);
 
-      return { code: 200, body: { game: await readBoard(tx, today, held) } };
+      return { code: 200, body: { data: { game: await readBoard(tx, today, held) } } };
     });
 
     return reply.code(result.code).send(result.body);

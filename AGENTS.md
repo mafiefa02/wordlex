@@ -11,7 +11,7 @@ wrong here for reasons written down.
 Decisions live in `docs/adr/`, numbered and never rewritten — amend with a note at
 the top instead. What is still undecided lives in `docs/open-questions.md`.
 
-Three rules worth knowing before you edit:
+Four rules worth knowing before you edit:
 
 - The Dictionary and Answer Pool belong to `apps/api`. Nothing importable by the
   browser may ever hold them (ADR 0003).
@@ -20,6 +20,13 @@ Three rules worth knowing before you edit:
 - UI components go in `packages/ui` via `pnpm dlx shadcn@latest add <name> -c
   packages/ui`, and use the design system's tokens rather than raw Tailwind
   colours (ADR 0016).
+- Every API response is `{ data }` or `{ error: { code, message } }`, with the
+  codes in `apps/api/src/http.ts` and the reasoning in ADR 0023. A route types
+  what it sends, so drifting out of that shape is a type error.
+- The writes this app defines (`POST /game`, `POST /guess`) require an
+  `Idempotency-Key` holding a uuid and store it on the row they create, so a
+  retry cannot spend a second Guess or start a second Game. On `POST /game` that
+  key is a credential — read ADR 0024 before you touch it.
 
 `pnpm build`, `pnpm check-types`, `pnpm test`, `pnpm lint`, `pnpm format`.
 

@@ -5,9 +5,11 @@ Things deliberately left undecided, work that must happen before launch, and wor
 ## Deferred by choice
 
 **Whether a Game with no Guesses counts as Abandoned.** ADR 0022 makes `POST /game` the
-only thing that creates a Game, so pressing Play and walking away now leaves a row with zero
-Guesses — as does the losing half of two racing Play presses. Those are swept to `abandoned`
-at rollover alongside people who genuinely played and stopped, which is a much weaker thing.
+only thing that creates a Game, so pressing Play and walking away leaves a row with zero
+Guesses. ADR 0024 removed the other source of these — two racing Play presses under one
+`Idempotency-Key` are now one Game, so the orphan is gone unless the client sends a fresh key
+per click. What is left is genuine: someone pressed Play and never typed. Those are swept to
+`abandoned` at rollover alongside people who played and stopped, which is a much weaker thing.
 Excluding zero-Guess Games is one query away; nothing decides it yet.
 
 **What a Solve Rate is computed over, now that anonymous Games are cheap to make.** ADR 0022
