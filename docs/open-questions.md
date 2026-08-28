@@ -19,6 +19,11 @@ else, with the Account's own Game surviving a collision.
 
 **How anyone signs in.** ADR 0025: Google, and only Google.
 
+**What a share is.** ADR 0028: the clipboard text it always was, plus a 1080x1920 image
+for an Instagram Story, neither of which ever carries a letter or the Answer — not even
+after rollover, because a picture outlives the WordleX Day it was made in. This was the
+last assumption ADR 0005 was resting on that nobody had actually decided.
+
 ## Deferred by choice
 
 **What a Difficulty is.** The word-length axis is settled (it is part of a Track). Difficulty is a separate axis and is still undefined. Three readings were on the table — a rules ladder applied to the same word, a smaller guess budget, or harder words drawn from a different slice of the pool. Only the third multiplies Answer Pool consumption, which matters because Sundanese 5-letter has under a year of runway.
@@ -67,7 +72,5 @@ half is what shipped.
 **Answer Pool runway.** ADR 0005 notes that pool depth is an operational concern. Sundanese 5-letter has roughly nine months, so there is time before anyone needs a way to see this.
 
 ## Assumptions worth revisiting
-
-**Shareable result grids.** ADR 0005 cites comparable shared grids as a reason for the single global rollover. Sharing was never actually specified as a feature — it was assumed from Wordle. If sharing is dropped, the rollover decision still holds on its own: local-midnight rollover would have to trust the browser clock, which reopens the streak-faking hole that ADR 0003 exists to close.
 
 **The landing page cannot promise instant play.** With Daily-only, a visitor who clicks "Play" gets exactly one game and then waits until tomorrow. The landing page has to sell the ritual rather than the immediacy.

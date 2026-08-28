@@ -1,30 +1,20 @@
-import { dayEndsAt, LANGUAGE_NAMES, type Language, type Length, type Mark } from "@wordlex/domain";
+import { dayEndsAt, LANGUAGE_NAMES, type Language, type Length } from "@wordlex/domain";
 import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@wordlex/ui/components/button";
 import { LogoMark } from "@wordlex/ui/components/logo";
 import { cn } from "@wordlex/ui/lib/utils";
 import type { Board } from "@/lib/api";
+import { cardName, shareText, storyCard } from "@/lib/share";
 
-/** One square per Mark. Letters never travel with a share. */
-const SQUARE: Record<Mark, string> = { exact: "🟩", present: "🟨", absent: "⬛" };
+/* An empty stand-in, so whether this browser hands files to the share sheet can
+   be answered before the card has finished drawing — otherwise the button's
+   label flips from "Save image" to "Share image" in front of the player. */
+const PROBE = new File([], "wordlex.png", { type: "image/png" });
 
 /* Empty by default, so an unspent Guess is an outline and a spent one is a Mark. */
 const CELL =
   "size-[15px] rounded-[3px] shadow-[inset_0_0_0_1px_var(--border)] data-mark:bg-(--mark-bg) data-mark:shadow-none";
-
-function shareText(board: Board, language: Language, length: Length, budget: number) {
-  const track = `${LANGUAGE_NAMES[language]} ${length} Tiles`;
-  const spent = board.status === "won" ? board.guesses.length : "X";
-  return [
-    `WORDLEX · ${track}`,
-    `${board.day} · ${spent}/${budget}`,
-    "",
-    board.guesses.map((guess) => guess.marks.map((mark) => SQUARE[mark]).join("")).join("\n"),
-    "",
-    "play.wordlex.afiefabd.com",
-  ].join("\n");
-}
 
 /**
  * The result, and the copy of it. The grid here is the *whole* board — the rows
@@ -35,8 +25,8 @@ function shareText(board: Board, language: Language, length: Length, budget: num
  * while the Game is live). Everyone is on the same Daily, so a screenshot
  * posted at noon would spoil it for everyone who has not played yet — and
  * nothing else on this screen gives the word away.
- * What goes on the clipboard is only the Guesses that were made, because blank
- * squares in a shared grid read as Marks.
+ * Neither share carries the Answer at all, at any time of day — a picture
+ * outlives the Day it was made in (ADR 0028).
  */
 export function ResultSheet({
   board,
@@ -68,6 +58,39 @@ export function ResultSheet({
     return () => window.removeEventListener("pointerdown", onPointerDown);
   }, [onClose]);
 
+  /*
+    The card is drawn when the sheet opens rather than when the button is
+    pressed: Safari refuses `navigator.share` once too long has passed since the
+    gesture that led to it, and drawing is the slow half.
+  */
+  const [card, setCard] = useState<File>();
+  const [undrawable, setUndrawable] = useState(false);
+  // The deps are fixed for as long as this sheet exists — the route keys the
+  // whole screen by Track, and a board stops changing once the Game is over —
+  // so there is no stale card to clear on the way in.
+  useEffect(() => {
+    let live = true;
+    storyCard({ board, language, length, budget })
+      .then((blob) => {
+        if (live) {
+          setCard(new File([blob], cardName(board, language, length), { type: "image/png" }));
+        }
+      })
+      // Nothing to retry — a canvas that would not draw once will not draw on a
+      // second press. The button says so and stays out of the way of Copy.
+      .catch(() => {
+        if (live) setUndrawable(true);
+      });
+    return () => {
+      live = false;
+    };
+  }, [board, language, length, budget]);
+
+  // Handing a file to the share sheet is the only route a browser has to
+  // Instagram — there is no way to open the Stories composer directly. Where
+  // there is no such sheet, the file is downloaded and the label says so.
+  const shareable = navigator.canShare?.({ files: [card ?? PROBE] }) ?? false;
+
   // One timer set for the rollover rather than a clock that ticks: the Answer
   // is worth showing the moment the Day it belonged to is over, and a board
   // left open across 00:00 WIB is the only way to be here when that happens.
@@ -77,6 +100,24 @@ export function ResultSheet({
     const timer = setTimeout(() => setDayOver(true), dayEndsAt(board.day).getTime() - Date.now());
     return () => clearTimeout(timer);
   }, [board.day, dayOver]);
+
+  async function shareImage() {
+    if (card === undefined) return;
+    if (shareable) {
+      try {
+        return await navigator.share({ files: [card] });
+      } catch (error) {
+        // A cancelled share is a decision, not a failure. Anything else falls
+        // through to the download, which always works.
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+    const url = URL.createObjectURL(card);
+    Object.assign(document.createElement("a"), { href: url, download: card.name }).click();
+    // Next tick, not this one: Firefox cancels a download whose URL is revoked
+    // before it has started reading it.
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
 
   async function copy() {
     try {
@@ -132,8 +173,11 @@ export function ResultSheet({
       <p className="text-sm text-muted-foreground">Next Daily at 00:00 WIB.</p>
 
       <div className="flex flex-wrap justify-center gap-2">
+        <Button size="lg" onClick={shareImage} disabled={card === undefined}>
+          {undrawable ? "Could not draw it" : shareable ? "Share image" : "Save image"}
+        </Button>
         {/* The label is the whole confirmation — a toast here would land on the sheet. */}
-        <Button size="lg" onClick={copy}>
+        <Button size="lg" variant="secondary" onClick={copy}>
           {label}
         </Button>
         <Button size="lg" variant="outline" onClick={onClose}>

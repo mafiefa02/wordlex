@@ -1,14 +1,18 @@
 # Play app mocks
 
-Three takes on the game screen. **A is the pick**; B and C are kept for the parts
-of them that might still be borrowed. Open them straight from disk — no server
-needed:
+Two sets, both opened straight from disk — no server needed:
 
 ```
-docs/mocks/play-a-focus.html
+docs/mocks/play-a-focus.html    the game screen, three takes
 docs/mocks/play-b-twelve.html
 docs/mocks/play-c-rail.html
+docs/mocks/story-cards.html     the Instagram Story card, three takes
 ```
+
+## The game screen
+
+Three takes. **A is the pick**; B and C are kept for the parts of them that might
+still be borrowed.
 
 They are playable. Type on a real keyboard or tap the on-screen one. The Answer
 is `GREAT` on 5 Tiles, `BARANG` on 6, `ARTICLE` on 7. Type something outside the
@@ -57,3 +61,40 @@ Design tokens only, both themes. Every motion is one-shot and gated on
 Nothing repaints on a timer — no spinner while a Guess is in flight, no blinking
 caret. CONTEXT.md's words in the copy: Tile, Guess, Mark, Track, Daily, and an
 Unknown Word that blames our Dictionary rather than the player.
+
+## The Story card
+
+`story-cards.html` — three takes on the image a finished Game exports for an
+Instagram Story. **A is the pick** and is what `apps/play/src/lib/share.ts` draws
+(ADR 0028); B and C are kept, and B is the one to reach for if the card ever
+needs to work at thumbnail size. Each canvas is the real thing, 1080&times;1920, drawn by the code
+that would ship, shown at a quarter of its size. Change the Track, the result and
+the card's palette at the top; the dashed bands are Instagram's own chrome, which
+eats the top 250px and the bottom 310px of every Story.
+
+| | A — Board | B — Score | C — Rows |
+|---|---|---|---|
+| **The subject** | the board | the number | the Guesses themselves |
+| **Unspent rows** | drawn as outlines, like the sheet | drawn as outlines | left out, like the clipboard |
+| **At thumbnail size** | a grid, no score | the score, unmissable | a stripe pattern |
+| **Per-Track colour** | the logo only | a wash in the language hue | the logo only |
+
+Two rules hold across all three, and neither is negotiable by picking a
+different one:
+
+- **No letters and no Answer, ever** — not even after the WordleX Day is over.
+  The result sheet can show a lost Answer at rollover because it is on one
+  screen; a PNG outlives the Day it was made in.
+- **The card pins its own palette** rather than reading the theme. A share is not
+  a themed surface, and `oklch()` is not safe in a canvas everywhere the tokens
+  are. Light or dark is a choice made once, in code, not per player.
+
+These mocks wrote the WordleX Day as `28 Aug 2026` while the clipboard still
+wrote `2026-08-28`. That disagreement was the mocks' doing and is settled: both
+paths now use the card's form, because a share is read by a person before it is
+read by anything else (ADR 0028).
+
+**Share&hellip;** hands the PNG to `navigator.share`, which is the only route a
+browser has to Instagram — there is no way to open the Stories composer directly
+from the web. It does nothing useful on a desktop. Open this file on a phone to
+see whether Instagram actually appears in the sheet.
