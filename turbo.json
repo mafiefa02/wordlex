@@ -8,7 +8,7 @@
       // fails on Vercel with the variable plainly set on the project. Turbo
       // infers `NEXT_PUBLIC_*` for the landing page from Next itself; there is
       // no such inference here, so it is written down.
-      "env": ["VITE_API_URL"],
+      "env": ["VITE_API_URL", "VITE_SITE_URL"],
       "outputs": [".next/**", "!.next/cache/**", ".output/**", ".vercel/output/**", "dist/**"]
     },
     "check-types": {

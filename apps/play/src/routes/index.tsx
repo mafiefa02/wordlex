@@ -15,6 +15,11 @@ import { useGame } from "@/lib/use-game";
 const Lang = type.enumerated(...LANGUAGES);
 const Len = type.enumerated(...LENGTHS);
 
+// The landing page is a separate deployment (ADR 0006), so the lockup is a plain
+// href out of this app rather than a route. Same shape as the landing page's own
+// link back here.
+const siteUrl = import.meta.env.VITE_SITE_URL ?? "http://localhost:3000";
+
 export const Route = createFileRoute("/")({
   // Each half falls back on its own, so a junk length keeps the language the
   // player asked for. A hand-edited or stale link is normal, not a crash.
@@ -35,7 +40,13 @@ function Home() {
   return (
     <div className={cn("flex h-dvh flex-col", HUE[lang])}>
       <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-        <Logo size={22} />
+        <a
+          href={siteUrl}
+          aria-label="WordleX home"
+          className="rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <Logo size={22} />
+        </a>
         <span className="text-xs text-muted-foreground tabular-nums">{wordlexDay()}</span>
       </header>
 
