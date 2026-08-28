@@ -1,0 +1,22 @@
+# The landing page is what search should find. This app is a board that only
+# exists once a Player asks for it, so there is nothing here to index — and on
+# Vercel a crawl is a billed invocation (ADR 0006).
+#
+# A request, not a gate. Anything that means harm ignores this file, and it
+# does not stop scripted Games: those are made by POST /game on the API, which
+# a script reaches without ever loading this app. Putting a challenge in front
+# of that endpoint is still an open question.
+
+# Link previews are exempt. A share carries `play.wordlex.afiefabd.com` as
+# text (ADR 0028), so these fetch the page when someone pastes their grid into
+# a chat, and a blanket rule would leave a bare link.
+User-agent: Twitterbot
+User-agent: facebookexternalhit
+User-agent: Slackbot-LinkExpanding
+User-agent: Discordbot
+User-agent: TelegramBot
+User-agent: WhatsApp
+Disallow:
+
+User-agent: *
+Disallow: /
