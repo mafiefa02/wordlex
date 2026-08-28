@@ -1,6 +1,7 @@
 import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import appCss from "@wordlex/ui/globals.css?url";
+import { themeInitScript } from "@wordlex/ui/lib/theme";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -21,9 +22,18 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    // Dark by default, so the markup says so rather than waiting on a script.
+    // The script only corrects it for someone who has chosen light, and it sits
+    // in the head so that correction lands before first paint. It reads the same
+    // cookie the landing page's toggle writes, which is how the choice crosses
+    // the two origins — this app only ever reads it, so it needs no domain.
+    // `suppressHydrationWarning` is required: the script rewrites the attribute
+    // before React hydrates, so the server HTML and the live DOM disagree here
+    // by design for anyone on light.
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
         {children}

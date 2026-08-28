@@ -1,5 +1,35 @@
 # One UI package, shadcn/ui on Base UI, and a palette carried by lightness
 
+> **Amended 2026-08-28 (theme default).** "Theme follows the system, with no
+> JavaScript" below no longer describes the landing page. Dark is now the
+> default outright: `apps/landing` renders `<html data-theme="dark">`, so the
+> system preference decides nothing and someone on a light OS still gets the
+> dark page. A footer toggle flips it and remembers the choice.
+>
+> The tokens are unchanged — `data-theme` was already the override this ADR
+> designed, so nothing in `globals.css` moved. What was added is the smallest
+> thing that makes a manual toggle work without a flash of the wrong theme: an
+> inline script in `<head>` (`packages/ui/src/lib/theme.ts`) that corrects the
+> attribute before first paint. It is a string, not a component, because it has
+> to run ahead of React, and both apps carry it.
+>
+> **The choice is a cookie, not `localStorage`.** The two apps are separate
+> origins (ADR 0006) and `localStorage` does not cross one, so a player who
+> picked light on the landing page would have got dark in the game. The cookie
+> is scoped to `wordlex.afiefabd.com`, the domain the apps share — the same
+> mechanism ADR 0006 already uses for the session, and set from the same kind of
+> environment variable (`NEXT_PUBLIC_COOKIE_DOMAIN`, unset locally where
+> everything is `localhost`).
+>
+> Only the landing page writes it, because only it has the toggle; `apps/play`
+> reads the cookie the browser sends and therefore needs no domain configured.
+> Scope it as tightly as both apps allow. If they are ever moved so that neither
+> is a subdomain of the other, a shared parent domain is the only option left,
+> and it will send this cookie to every other site under that parent.
+>
+> `next-themes` is still not installed, for the reason given below — its
+> no-flash script is Next-shaped and would not serve `apps/play`.
+
 > **Amended 2026-08-28.** The shadcn slot tokens are now shadcn's own zinc
 > default: neutral greys, and a `--primary` that is near black in light and near
 > white in dark. Everything below about *where* the palette lives still holds —

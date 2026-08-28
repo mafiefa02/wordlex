@@ -8,8 +8,9 @@
 @source "../**/*.{ts,tsx}";
 
 /*
-  Theme follows the operating system with no JavaScript. `data-theme` on <html>
-  overrides it in either direction, for when there is a manual switch to build.
+  With nothing set, the theme follows the operating system and needs no
+  JavaScript. `data-theme` on <html> overrides it in either direction — which is
+  how the landing page pins itself to dark and how its toggle flips it (ADR 0016).
   It is a root-level switch only — scoping a theme to a subtree would light up
   `dark:` utilities without moving the tokens underneath them.
 */

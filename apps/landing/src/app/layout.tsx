@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+
+import { themeInitScript } from "@wordlex/ui/lib/theme";
+
 import "./globals.css";
 
 const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -23,7 +26,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className="h-full antialiased">
+    // Dark by default, so the markup says so rather than waiting on a script.
+    // `suppressHydrationWarning` is required, not cosmetic: the script below
+    // rewrites this attribute before React hydrates, so for anyone on light the
+    // server HTML and the live DOM disagree here by design.
+    // The script only runs to correct it for someone who has chosen light, and
+    // it sits in the head so that correction lands before first paint.
+    <html lang="en" data-theme="dark" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
