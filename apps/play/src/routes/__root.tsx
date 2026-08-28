@@ -1,6 +1,6 @@
 import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import appCss from "@wordlex/ui/globals.css?url";
+import appCss from "../app.css?url";
 import { themeInitScript } from "@wordlex/ui/lib/theme";
 
 export const Route = createRootRoute({

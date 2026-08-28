@@ -1,0 +1,128 @@
+@import "@wordlex/ui/globals.css";
+
+/*
+  The board's motion, and all of it one-shot: a Tile turns once when its Mark
+  lands, a row shakes once when a word is refused. Nothing repaints on a timer,
+  which is why a Guess in flight dims rather than spins.
+*/
+@theme {
+  --animate-tile-pop: tile-pop 150ms cubic-bezier(0.23, 1, 0.32, 1);
+  --animate-tile-flip: tile-flip 420ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  --animate-tile-hop: tile-hop 480ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  --animate-row-sent: row-sent 220ms cubic-bezier(0.23, 1, 0.32, 1);
+  --animate-row-shake: row-shake 380ms ease-out;
+  --animate-sheet-up: sheet-up 320ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  --animate-mini-in: mini-in 300ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  --animate-toast-in: toast-in 220ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  --animate-scrim-in: scrim-in 320ms ease-out both;
+}
+
+/* Both halves of the reveal live in one keyframe, so a Tile takes its Mark at
+   the midpoint of its own turn and nothing has to be timed against it. */
+@keyframes tile-flip {
+  0% {
+    transform: rotateX(0deg);
+    border-color: var(--border);
+    background-color: transparent;
+    color: var(--foreground);
+  }
+  49.9% {
+    border-color: var(--border);
+    background-color: transparent;
+    color: var(--foreground);
+  }
+  50% {
+    transform: rotateX(90deg);
+    border-color: transparent;
+    background-color: var(--mark-bg);
+    color: var(--mark-fg);
+  }
+  100% {
+    transform: rotateX(0deg);
+    border-color: transparent;
+    background-color: var(--mark-bg);
+    color: var(--mark-fg);
+  }
+}
+
+@keyframes tile-pop {
+  40% {
+    scale: 1.09;
+  }
+}
+
+@keyframes tile-hop {
+  40% {
+    translate: 0 -14px;
+  }
+  72% {
+    translate: 0 3px;
+  }
+}
+
+/* The Guess has gone; the row lifts once to say so. What holds until the
+   response lands is a static dim, not this. */
+@keyframes row-sent {
+  45% {
+    translate: 0 -4px;
+  }
+}
+
+@keyframes row-shake {
+  20% {
+    translate: -7px;
+  }
+  40% {
+    translate: 7px;
+  }
+  62% {
+    translate: -4px;
+  }
+  82% {
+    translate: 3px;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    translate: 0 100%;
+  }
+}
+
+@keyframes mini-in {
+  from {
+    opacity: 0;
+    scale: 0.5;
+  }
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+    scale: 0.96;
+  }
+}
+
+/* One pair per Mark, set on whatever carries `data-mark` — a Tile, a key, or a
+   square in the result grid. Never say green/amber/grey (CONTEXT.md). */
+@layer components {
+  [data-mark="exact"] {
+    --mark-bg: var(--exact);
+    --mark-fg: var(--exact-foreground);
+  }
+  [data-mark="present"] {
+    --mark-bg: var(--present);
+    --mark-fg: var(--present-foreground);
+  }
+  [data-mark="absent"] {
+    --mark-bg: var(--absent);
+    --mark-fg: var(--absent-foreground);
+  }
+}
