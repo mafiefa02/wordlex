@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Mock A — Focus</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="tokens.css" />
+    <style>
+      /* The header and Track bar run the full width; the board and the keyboard
+     are what stay in a column, since they are what you look at. */
+      .app {
+        display: flex;
+        flex-direction: column;
+        height: 100dvh;
+      }
+
+      /* ---- Track bar: language sets the hue, and the lengths inherit it ---- */
+      .tracks {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--border);
+      }
+      .pill {
+        padding: 5px 10px;
+        border-radius: var(--radius-md);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--muted-foreground);
+        transition:
+          background-color 180ms ease-out,
+          color 180ms ease-out,
+          box-shadow 180ms ease-out;
+      }
+      .pill:hover {
+        background: var(--muted);
+        color: var(--foreground);
+      }
+      .pill[aria-pressed="true"] {
+        color: var(--foreground);
+        background: color-mix(in oklch, var(--hue), var(--background) 84%);
+        box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--hue), transparent 62%);
+      }
+      .sep {
+        width: 1px;
+        height: 16px;
+        background: var(--border);
+        margin-inline: 6px;
+      }
+
+      /* ---- board ---- */
+      .stage {
+        flex: 1;
+        display: grid;
+        place-content: center;
+        gap: 16px;
+        padding: 12px 16px;
+      }
+      .board {
+        display: grid;
+        gap: 6px;
+        --tile: min(60px, calc((min(100vw, 540px) - 32px - (var(--len) - 1) * 6px) / var(--len)));
+      }
+      .row {
+        display: grid;
+        grid-template-columns: repeat(var(--len), var(--tile));
+        gap: 6px;
+      }
+      .tile {
+        display: grid;
+        place-items: center;
+        width: var(--tile);
+        height: var(--tile);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        font-size: calc(var(--tile) * 0.46);
+        font-weight: 700;
+        line-height: 1;
+        backface-visibility: hidden;
+        transition: border-color 140ms ease-out;
+      }
+      .tile[data-filled] {
+        border-color: color-mix(in oklch, var(--foreground), transparent 55%);
+      }
+      /* A ring, not a blinking caret — nothing here repaints on a timer. */
+      .row[data-live] .tile[data-next] {
+        border-color: color-mix(in oklch, var(--hue), transparent 30%);
+        box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--hue), transparent 30%);
+      }
+      /* Reduced motion still needs the Mark to land, just without the turn. */
+      .tile[data-mark] {
+        border-color: transparent;
+        background-color: var(--mark-bg);
+        color: var(--mark-fg);
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .tile[data-pop] {
+          animation: tile-pop 150ms var(--ease-out-strong);
+        }
+        .tile[data-flip] {
+          animation: tile-flip 420ms cubic-bezier(0.32, 0.72, 0, 1) both;
+          animation-delay: calc(var(--i) * 75ms);
+        }
+        .tile[data-hop] {
+          animation: tile-hop 480ms var(--ease-out-strong) both;
+          animation-delay: calc(var(--i) * 60ms);
+        }
+        .row[data-sent] .tile {
+          animation: row-sent 220ms var(--ease-out-strong);
+        }
+        .row[data-reject] {
+          animation: row-shake 380ms ease-out;
+        }
+      }
+      @keyframes tile-pop {
+        40% {
+          scale: 1.09;
+        }
+      }
+      @keyframes tile-hop {
+        40% {
+          translate: 0 -14px;
+        }
+        72% {
+          translate: 0 3px;
+        }
+      }
+      @keyframes row-sent {
+        45% {
+          translate: 0 -4px;
+        }
+      }
+      @keyframes row-shake {
+        20% {
+          translate: -7px;
+        }
+        40% {
+          translate: 7px;
+        }
+        62% {
+          translate: -4px;
+        }
+        82% {
+          translate: 3px;
+        }
+      }
+      /* Both halves in one keyframe, the way the landing page's field does it: the
+     Tile takes its Mark at the midpoint of its own turn. */
+      @keyframes tile-flip {
+        0% {
+          transform: rotateX(0deg);
+          border-color: var(--border);
+          background-color: transparent;
+          color: var(--foreground);
+        }
+        49.9% {
+          border-color: var(--border);
+          background-color: transparent;
+          color: var(--foreground);
+        }
+        50% {
+          transform: rotateX(90deg);
+          border-color: transparent;
+          background-color: var(--mark-bg);
+          color: var(--mark-fg);
+        }
+        100% {
+          transform: rotateX(0deg);
+          border-color: transparent;
+          background-color: var(--mark-bg);
+          color: var(--mark-fg);
+        }
+      }
+
+      /* ---- keyboard ---- */
+      .kb {
+        display: grid;
+        gap: 6px;
+        width: 100%;
+        max-width: 540px;
+        margin-inline: auto;
+        padding: 6px 6px calc(10px + env(safe-area-inset-bottom));
+      }
+      .kbrow {
+        display: flex;
+        justify-content: center;
+        gap: 5px;
+      }
+      .key {
+        flex: 1;
+        max-width: 46px;
+        height: 54px;
+        min-width: 0;
+        display: grid;
+        place-items: center;
+        border-radius: var(--radius-md);
+        background: var(--secondary);
+        font-size: 14px;
+        font-weight: 600;
+        transition:
+          background-color 220ms ease-out,
+          color 220ms ease-out,
+          translate 90ms var(--ease-out-strong);
+      }
+      .key[data-wide] {
+        flex: 1.55;
+        max-width: 66px;
+        font-size: 11px;
+        letter-spacing: 0.04em;
+      }
+      .key:active {
+        translate: 0 2px;
+      }
+      .key[data-mark] {
+        background-color: var(--mark-bg);
+        color: var(--mark-fg);
+      }
+
+      /* ---- result ---- */
+      .result {
+        position: fixed;
+        inset: auto 0 0 0;
+        z-index: 15;
+        max-width: 540px;
+        margin-inline: auto;
+        display: grid;
+        gap: 12px;
+        justify-items: center;
+        padding: 22px 20px calc(24px + env(safe-area-inset-bottom));
+        background: var(--popover);
+        border-top: 1px solid var(--border);
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        box-shadow: 0 -20px 50px -30px rgb(0 0 0 / 0.6);
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .result {
+          animation: sheet-up 320ms var(--ease-out-strong) both;
+        }
+      }
+      @keyframes sheet-up {
+        from {
+          translate: 0 100%;
+        }
+      }
+      .result h2 {
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+      .result .answer {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+      }
+      .result .brand .mark {
+        width: 14px;
+        height: 14px;
+      }
+      .result .brand .mark i {
+        width: 6.5px;
+        height: 6.5px;
+        border-radius: 1.5px;
+      }
+      .result .brand {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--muted-foreground);
+      }
+
+      /* Marks only, no letters — this is the grid the clipboard gets, so it is a
+     preview as much as a summary. */
+      .mini {
+        display: grid;
+        gap: 3px;
+      }
+      .mini div {
+        display: grid;
+        grid-template-columns: repeat(var(--len), 15px);
+        gap: 3px;
+      }
+      .mini span {
+        width: 15px;
+        height: 15px;
+        border-radius: 3px;
+        background: var(--mark-bg);
+      }
+      /* The Guesses that were never spent, so the grid is the whole board. */
+      .mini span:not([data-mark]) {
+        background: transparent;
+        box-shadow: inset 0 0 0 1px var(--border);
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .mini span {
+          animation: mini-in 300ms var(--ease-out-strong) both;
+          animation-delay: calc(var(--i) * 22ms);
+        }
+      }
+      @keyframes mini-in {
+        from {
+          opacity: 0;
+          scale: 0.5;
+        }
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+      }
+      .btn.ghost {
+        background: transparent;
+        color: var(--muted-foreground);
+        box-shadow: inset 0 0 0 1px var(--border);
+      }
+      .btn.ghost:hover {
+        color: var(--foreground);
+        background: var(--muted);
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .btn[data-copied] {
+          animation: copied 320ms var(--ease-out-strong);
+        }
+      }
+      @keyframes copied {
+        35% {
+          scale: 1.06;
+        }
+      }
+      .btn {
+        height: 36px;
+        padding-inline: 14px;
+        border-radius: var(--radius-lg);
+        background: var(--primary);
+        color: var(--primary-foreground);
+        font-size: 14px;
+        font-weight: 500;
+        transition:
+          opacity 160ms ease-out,
+          translate 90ms var(--ease-out-strong);
+      }
+      .btn:hover {
+        opacity: 0.85;
+      }
+      .btn:active {
+        translate: 0 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="top">
+        <span class="logo"
+          ><span class="mark"><i></i><i></i><i></i><i></i></span
+          ><span class="wordmark">WORDLEX</span></span
+        >
+        <span class="mock-tag">Mock A — Focus</span>
+        <span class="day">2026-08-28</span>
+        <button class="icon-btn" id="theme" aria-label="Switch theme"></button>
+      </header>
+
+      <nav class="tracks" id="tracks" aria-label="Track"></nav>
+
+      <main class="stage">
+        <div class="board" id="board" role="grid" aria-label="Board"></div>
+        <p class="hint" id="hint">Type to start.</p>
+      </main>
+
+      <div class="kb" id="kb"></div>
+    </div>
+
+    <div class="toast-rail" id="toasts"></div>
+
+    <script src="demo.js"></script>
+    <script>
+      (function () {
+        const {
+          ANSWER,
+          known,
+          score,
+          strongest,
+          KEYS,
+          LANGUAGES,
+          LENGTHS,
+          budget,
+          REDUCED,
+          toaster,
+          themeToggle,
+          SUN,
+        } = DEMO;
+
+        const board = document.getElementById("board");
+        const kb = document.getElementById("kb");
+        const hint = document.getElementById("hint");
+        const trackBar = document.getElementById("tracks");
+        const toast = toaster(document.getElementById("toasts"));
+        document.getElementById("theme").innerHTML = SUN;
+        themeToggle(document.getElementById("theme"));
+
+        let lang = "en";
+        let length = 5;
+        let typed = "";
+        let played = []; // { word, marks }
+        let over = false;
+        let busy = false;
+
+        const answer = () => ANSWER[length];
+
+        /* ---- Track bar ---- */
+        function drawTracks() {
+          trackBar.replaceChildren();
+          document
+            .querySelector(".app")
+            .style.setProperty("--hue", LANGUAGES.find((l) => l.code === lang).hue);
+          for (const language of LANGUAGES) {
+            const pill = document.createElement("button");
+            pill.className = "pill";
+            pill.textContent = language.short;
+            pill.style.setProperty("--hue", language.hue);
+            pill.setAttribute("aria-pressed", String(language.code === lang));
+            pill.onclick = () => {
+              lang = language.code;
+              reset();
+            };
+            trackBar.append(pill);
+          }
+          trackBar.append(Object.assign(document.createElement("span"), { className: "sep" }));
+          for (const l of LENGTHS) {
+            const pill = document.createElement("button");
+            pill.className = "pill";
+            pill.textContent = l;
+            pill.setAttribute("aria-pressed", String(l === length));
+            pill.onclick = () => {
+              length = l;
+              reset();
+            };
+            trackBar.append(pill);
+          }
+        }
+
+        /* ---- board ---- */
+        function drawBoard() {
+          board.replaceChildren();
+          board.style.setProperty("--len", length);
+          for (let r = 0; r < budget(length); r += 1) {
+            const row = document.createElement("div");
+            row.className = "row";
+            row.style.setProperty("--len", length);
+            row.setAttribute("role", "row");
+            for (let c = 0; c < length; c += 1) {
+              const tile = document.createElement("div");
+              tile.className = "tile";
+              tile.setAttribute("role", "gridcell");
+              row.append(tile);
+            }
+            board.append(row);
+          }
+          paint();
+        }
+
+        function paint() {
+          const rows = [...board.children];
+          rows.forEach((row, r) => {
+            const live = r === played.length && !over;
+            row.toggleAttribute("data-live", live);
+            [...row.children].forEach((tile, c) => {
+              if (r < played.length) return; // already revealed, leave it
+              const letter = live ? (typed[c] ?? "") : "";
+              if (tile.textContent !== letter) {
+                tile.textContent = letter;
+                if (letter && !REDUCED()) {
+                  tile.dataset.pop = "";
+                  tile.addEventListener("animationend", () => delete tile.dataset.pop, {
+                    once: true,
+                  });
+                }
+              }
+              tile.toggleAttribute("data-filled", Boolean(letter));
+              tile.toggleAttribute("data-next", live && c === typed.length);
+            });
+          });
+        }
+
+        /* ---- keyboard ---- */
+        const keyState = new Map();
+        function drawKeyboard() {
+          kb.replaceChildren();
+          for (const row of KEYS) {
+            const line = document.createElement("div");
+            line.className = "kbrow";
+            for (const key of row) {
+              const button = document.createElement("button");
+              button.className = "key";
+              button.textContent = key === "DEL" ? "⌫" : key;
+              button.dataset.key = key;
+              if (key.length > 1) button.dataset.wide = "";
+              button.onclick = () => press(key);
+              line.append(button);
+            }
+            kb.append(line);
+          }
+          paintKeys();
+        }
+        function paintKeys() {
+          for (const button of kb.querySelectorAll(".key")) {
+            const mark = keyState.get(button.dataset.key);
+            if (mark) button.dataset.mark = mark;
+            else delete button.dataset.mark;
+          }
+        }
+
+        /* ---- play ---- */
+        function press(key) {
+          if (over || busy) return;
+          if (key === "ENTER") return submit();
+          if (key === "DEL") {
+            typed = typed.slice(0, -1);
+            return paint();
+          }
+          if (typed.length >= length) return;
+          typed += key;
+          hint.textContent = "";
+          paint();
+        }
+
+        function reject(message) {
+          const row = board.children[played.length];
+          if (!REDUCED()) {
+            row.dataset.reject = "";
+            row.addEventListener("animationend", () => delete row.dataset.reject, { once: true });
+          }
+          toast(message);
+        }
+
+        function submit() {
+          if (typed.length < length) return reject("Not enough Tiles.");
+          // An Unknown Word is not a Guess: it spends no row, and it is recorded.
+          if (!known(typed)) return reject("Not in our Dictionary yet. Noted.");
+
+          const marks = score(typed, answer());
+          const row = board.children[played.length];
+          const word = typed;
+          busy = true;
+
+          // One-shot "sent", then the turn. No spinner, nothing repainting.
+          if (!REDUCED()) row.dataset.sent = "";
+          setTimeout(
+            () => {
+              delete row.dataset.sent;
+              [...row.children].forEach((tile, i) => {
+                tile.style.setProperty("--i", i);
+                tile.dataset.mark = marks[i];
+                if (!REDUCED()) {
+                  tile.dataset.flip = "";
+                  tile.addEventListener("animationend", () => delete tile.dataset.flip, {
+                    once: true,
+                  });
+                }
+              });
+              const done = REDUCED() ? 0 : (length - 1) * 75 + 420;
+              setTimeout(() => finish(row, word, marks), done);
+            },
+            REDUCED() ? 0 : 200,
+          );
+
+          played.push({ word, marks });
+          typed = "";
+        }
+
+        function finish(row, word, marks) {
+          [...word].forEach((letter, i) =>
+            keyState.set(letter, strongest(keyState.get(letter), marks[i])),
+          );
+          paintKeys();
+          busy = false;
+
+          const won = marks.every((m) => m === "exact");
+          const lost = !won && played.length === budget(length);
+          if (!won && !lost) return paint();
+
+          over = true;
+          paint();
+          if (won && !REDUCED()) {
+            [...row.children].forEach((tile, i) => {
+              tile.style.setProperty("--i", i);
+              tile.dataset.hop = "";
+            });
+          }
+          setTimeout(() => showResult(won), won ? 380 : 120);
+        }
+
+        /* One Mark per square, so nothing about the Answer travels with a share. */
+        const SQUARE = { exact: "\u{1F7E9}", present: "\u{1F7E8}", absent: "\u2B1B" };
+        const day = () => document.querySelector(".day").textContent;
+        const trackName = () => `${LANGUAGES.find((l) => l.code === lang).name} ${length} Tiles`;
+
+        function shareText(won) {
+          return [
+            `WORDLEX \u00b7 ${trackName()}`,
+            `${day()} \u00b7 ${won ? played.length : "X"}/${budget(length)}`,
+            "",
+            played.map((guess) => guess.marks.map((mark) => SQUARE[mark]).join("")).join("\n"),
+            "",
+            "play.wordlex.afiefabd.com",
+          ].join("\n");
+        }
+
+        /* execCommand is the fallback for a browser that refuses the async clipboard
+     without a secure context — opening these files from disk is one such. */
+        async function copyText(text) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch {
+            const area = document.createElement("textarea");
+            area.value = text;
+            area.style.cssText = "position:fixed;top:0;opacity:0";
+            document.body.append(area);
+            area.select();
+            const ok = document.execCommand("copy");
+            area.remove();
+            return ok;
+          }
+        }
+
+        /* The whole board, not only the rows that were spent — the empty ones are
+     how many Guesses were left, which is half of what a result says. */
+        function miniGrid() {
+          const grid = document.createElement("div");
+          grid.className = "mini";
+          for (let r = 0; r < budget(length); r += 1) {
+            const row = document.createElement("div");
+            row.style.setProperty("--len", length);
+            for (let c = 0; c < length; c += 1) {
+              const cell = document.createElement("span");
+              const mark = played[r]?.marks[c];
+              if (mark) cell.dataset.mark = mark;
+              cell.style.setProperty("--i", r * length + c);
+              row.append(cell);
+            }
+            grid.append(row);
+          }
+          return grid;
+        }
+
+        function showResult(won) {
+          const sheet = document.createElement("div");
+          sheet.className = "result";
+
+          const brand = document.createElement("p");
+          brand.className = "brand";
+          brand.innerHTML = '<span class="mark"><i></i><i></i><i></i><i></i></span>';
+          brand.append(`WordleX \u00b7 ${trackName()}`);
+          sheet.append(brand);
+
+          const head = document.createElement("h2");
+          head.textContent = won ? `Solved in ${played.length}.` : "Out of Guesses.";
+          sheet.append(head);
+
+          if (!won) {
+            const reveal = document.createElement("p");
+            reveal.className = "answer";
+            reveal.textContent = answer();
+            sheet.append(reveal);
+          }
+
+          sheet.append(miniGrid());
+
+          const line = document.createElement("p");
+          line.className = "hint";
+          line.textContent = "Next Daily at 00:00 WIB.";
+          sheet.append(line);
+
+          const actions = document.createElement("div");
+          actions.className = "actions";
+
+          // The label is the whole confirmation — a toast here would land on the sheet.
+          const share = document.createElement("button");
+          share.className = "btn";
+          share.textContent = "Copy result";
+          share.onclick = async () => {
+            const ok = await copyText(shareText(won));
+            share.textContent = ok ? "Copied" : "Could not copy";
+            share.dataset.copied = "";
+            share.addEventListener("animationend", () => delete share.dataset.copied, {
+              once: true,
+            });
+            setTimeout(() => {
+              share.textContent = "Copy result";
+            }, 1800);
+          };
+          actions.append(share);
+
+          const again = document.createElement("button");
+          again.className = "btn ghost";
+          again.textContent = "Pick another Track";
+          again.onclick = () => {
+            sheet.remove();
+            reset();
+          };
+          actions.append(again);
+
+          sheet.append(actions);
+          document.body.append(sheet);
+        }
+
+        function reset() {
+          typed = "";
+          played = [];
+          over = false;
+          busy = false;
+          keyState.clear();
+          hint.textContent = "Type to start.";
+          drawTracks();
+          drawBoard();
+          paintKeys();
+        }
+
+        addEventListener("keydown", (event) => {
+          if (event.metaKey || event.ctrlKey || event.altKey) return;
+          if (event.key === "Enter") return press("ENTER");
+          if (event.key === "Backspace") return press("DEL");
+          if (/^[a-z]$/i.test(event.key)) press(event.key.toUpperCase());
+        });
+
+        drawTracks();
+        drawBoard();
+        drawKeyboard();
+      })();
+    </script>
+  </body>
+</html>

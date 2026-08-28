@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Mock B — Twelve</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="tokens.css" />
+    <style>
+      .app {
+        display: flex;
+        flex-direction: column;
+        height: 100dvh;
+        max-width: 540px;
+        margin-inline: auto;
+      }
+      .screen {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .screen[hidden] {
+        display: none;
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .screen[data-enter] {
+          animation: screen-in 280ms var(--ease-out-strong) both;
+        }
+      }
+      @keyframes screen-in {
+        from {
+          opacity: 0;
+          scale: 0.985;
+        }
+      }
+
+      /* ---- overview ---- */
+      .overview {
+        flex: 1;
+        min-height: 0;
+        padding: 14px 16px;
+        display: grid;
+        gap: 10px;
+        align-content: safe center;
+        overflow-y: auto;
+      }
+      .lead {
+        font-size: 13px;
+        color: var(--muted-foreground);
+      }
+      .lang {
+        display: grid;
+        gap: 7px;
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .lang {
+          animation: rise 320ms var(--ease-out-strong) both;
+          animation-delay: calc(var(--i) * 55ms);
+        }
+      }
+      @keyframes rise {
+        from {
+          opacity: 0;
+          translate: 0 10px;
+        }
+      }
+      .lang h2 {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .lang h2 span {
+        width: 11px;
+        height: 11px;
+        rotate: 45deg;
+        border-radius: 2px;
+        background: var(--hue);
+      }
+      .chips {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 7px;
+      }
+      .chip {
+        display: grid;
+        gap: 5px;
+        justify-items: start;
+        padding: 11px 12px;
+        border-radius: var(--radius-lg);
+        text-align: left;
+        border: 1px solid color-mix(in oklch, var(--hue), transparent 76%);
+        background: color-mix(in oklch, var(--hue), var(--background) 93%);
+        transition:
+          background-color 220ms ease-out,
+          translate 220ms var(--ease-out-strong),
+          border-color 220ms ease-out;
+      }
+      .chip:hover {
+        translate: 0 -2px;
+        background: color-mix(in oklch, var(--hue), var(--background) 85%);
+        border-color: color-mix(in oklch, var(--hue), transparent 55%);
+      }
+      .chip:active {
+        translate: 0 0;
+      }
+      .chip b {
+        font-size: 19px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
+      }
+      .chip small {
+        font-size: 11px;
+        color: var(--muted-foreground);
+      }
+      .dots {
+        display: flex;
+        gap: 3px;
+      }
+      .dots i {
+        width: 5px;
+        height: 5px;
+        border-radius: 999px;
+        background: color-mix(in oklch, var(--foreground), transparent 78%);
+      }
+      .dots i[data-on] {
+        background: var(--hue);
+      }
+      .chip[data-state="won"] {
+        border-color: color-mix(in oklch, var(--exact), transparent 55%);
+        background: color-mix(in oklch, var(--exact), var(--background) 88%);
+      }
+      .chip[data-state="lost"] {
+        opacity: 0.62;
+      }
+
+      /* ---- board screen ---- */
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+      }
+      .back {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 9px;
+        border-radius: var(--radius-md);
+        font-size: 13px;
+        color: var(--muted-foreground);
+        transition:
+          background-color 160ms ease-out,
+          color 160ms ease-out;
+      }
+      .back:hover {
+        background: var(--muted);
+        color: var(--foreground);
+      }
+      .now {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .now span {
+        width: 9px;
+        height: 9px;
+        rotate: 45deg;
+        border-radius: 2px;
+        background: var(--hue);
+      }
+
+      .stage {
+        flex: 1;
+        display: grid;
+        place-content: center;
+        gap: 14px;
+        padding: 12px 16px;
+        position: relative;
+      }
+      .board {
+        display: grid;
+        gap: 6px;
+        perspective: 900px;
+        --tile: min(60px, calc((min(100vw, 540px) - 32px - (var(--len) - 1) * 6px) / var(--len)));
+      }
+      .row {
+        display: grid;
+        grid-template-columns: repeat(var(--len), var(--tile));
+        gap: 6px;
+      }
+      .tile {
+        display: grid;
+        place-items: center;
+        width: var(--tile);
+        height: var(--tile);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        font-size: calc(var(--tile) * 0.46);
+        font-weight: 700;
+        line-height: 1;
+        transition:
+          border-color 140ms ease-out,
+          background-color 160ms ease-out,
+          color 160ms ease-out;
+      }
+      .tile[data-filled] {
+        border-color: color-mix(in oklch, var(--foreground), transparent 55%);
+      }
+      /* A ring on the Tile about to take a letter — a static one, so nothing here
+     repaints on a timer the way a blinking caret would. */
+      .tile[data-next] {
+        border-color: color-mix(in oklch, var(--hue), transparent 30%);
+        box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--hue), transparent 30%);
+      }
+      .tile[data-mark] {
+        border-color: transparent;
+        background: var(--mark-bg);
+        color: var(--mark-fg);
+      }
+      .board[data-idle] .tile {
+        opacity: 0.4;
+      }
+
+      /* The whole Guess turns as one unit — one gesture per Guess, not one per Tile. */
+      @media (prefers-reduced-motion: no-preference) {
+        .row[data-flip] {
+          animation: row-flip 520ms cubic-bezier(0.32, 0.72, 0, 1);
+        }
+        .row[data-reject] {
+          animation: row-shake 380ms ease-out;
+        }
+        .tile[data-pop] {
+          animation: tile-pop 150ms var(--ease-out-strong);
+        }
+        .row[data-hop] {
+          animation: row-hop 480ms var(--ease-out-strong);
+        }
+      }
+      @keyframes row-flip {
+        50% {
+          transform: rotateX(90deg);
+        }
+      }
+      @keyframes row-hop {
+        40% {
+          translate: 0 -14px;
+        }
+        72% {
+          translate: 0 3px;
+        }
+      }
+      @keyframes tile-pop {
+        40% {
+          scale: 1.09;
+        }
+      }
+      @keyframes row-shake {
+        20% {
+          translate: -7px;
+        }
+        40% {
+          translate: 7px;
+        }
+        62% {
+          translate: -4px;
+        }
+        82% {
+          translate: 3px;
+        }
+      }
+
+      /* ---- the Play gesture: nothing is typeable until a Game exists ---- */
+      .play-over {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-content: center;
+        gap: 10px;
+        justify-items: center;
+        background: color-mix(in oklch, var(--background), transparent 22%);
+        backdrop-filter: blur(3px);
+      }
+      .play-over[data-going] {
+        pointer-events: none;
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .play-over[data-going] {
+          animation: play-away 260ms ease-in both;
+        }
+      }
+      @keyframes play-away {
+        to {
+          opacity: 0;
+          scale: 1.06;
+        }
+      }
+      .play-btn {
+        height: 44px;
+        padding-inline: 26px;
+        border-radius: var(--radius-lg);
+        background: var(--primary);
+        color: var(--primary-foreground);
+        font-size: 15px;
+        font-weight: 600;
+        box-shadow: 0 10px 30px -14px color-mix(in oklch, var(--hue), transparent 20%);
+        transition:
+          translate 120ms var(--ease-out-strong),
+          box-shadow 220ms ease-out;
+      }
+      .play-btn:hover {
+        translate: 0 -2px;
+        box-shadow: 0 16px 36px -14px color-mix(in oklch, var(--hue), transparent 10%);
+      }
+      .play-btn:active {
+        translate: 0 1px;
+      }
+
+      /* ---- keyboard, held light so the board keeps the weight ---- */
+      .kb {
+        display: grid;
+        gap: 5px;
+        padding: 6px 6px calc(10px + env(safe-area-inset-bottom));
+      }
+      .kbrow {
+        display: flex;
+        justify-content: center;
+        gap: 4px;
+      }
+      .key {
+        flex: 1;
+        max-width: 42px;
+        height: 46px;
+        min-width: 0;
+        display: grid;
+        place-items: center;
+        border-radius: var(--radius-md);
+        background: var(--secondary);
+        font-size: 13px;
+        font-weight: 600;
+        transition:
+          background-color 220ms ease-out,
+          color 220ms ease-out,
+          translate 90ms var(--ease-out-strong),
+          opacity 200ms ease-out;
+      }
+      .key[data-wide] {
+        flex: 1.5;
+        max-width: 60px;
+        font-size: 10px;
+        letter-spacing: 0.04em;
+      }
+      .key:active {
+        translate: 0 2px;
+      }
+      .key[data-mark] {
+        background: var(--mark-bg);
+        color: var(--mark-fg);
+      }
+      .kb[data-idle] .key {
+        opacity: 0.45;
+        pointer-events: none;
+      }
+
+      .result {
+        position: fixed;
+        inset: auto 0 0 0;
+        z-index: 15;
+        max-width: 540px;
+        margin-inline: auto;
+        display: grid;
+        gap: 12px;
+        justify-items: center;
+        padding: 22px 20px calc(24px + env(safe-area-inset-bottom));
+        background: var(--popover);
+        border-top: 1px solid var(--border);
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        box-shadow: 0 -20px 50px -30px rgb(0 0 0 / 0.6);
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .result {
+          animation: sheet-up 320ms var(--ease-out-strong) both;
+        }
+      }
+      @keyframes sheet-up {
+        from {
+          translate: 0 100%;
+        }
+      }
+      .result h2 {
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+      .result .answer {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+      }
+      .btn {
+        height: 36px;
+        padding-inline: 14px;
+        border-radius: var(--radius-lg);
+        background: var(--primary);
+        color: var(--primary-foreground);
+        font-size: 14px;
+        font-weight: 500;
+        transition: opacity 160ms ease-out;
+      }
+      .btn:hover {
+        opacity: 0.85;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="top">
+        <span class="logo"
+          ><span class="mark"><i></i><i></i><i></i><i></i></span
+          ><span class="wordmark">WORDLEX</span></span
+        >
+        <span class="mock-tag">Mock B — Twelve</span>
+        <span class="day">2026-08-28</span>
+        <button class="icon-btn" id="theme" aria-label="Switch theme"></button>
+      </header>
+
+      <section class="screen" id="overview-screen">
+        <div class="overview" id="overview"></div>
+      </section>
+
+      <section class="screen" id="board-screen" hidden>
+        <div class="bar">
+          <button class="back" id="back">← Tracks</button>
+          <span class="now" id="now"></span>
+        </div>
+        <main class="stage">
+          <div class="board" id="board" role="grid" aria-label="Board"></div>
+          <div class="play-over" id="play-over">
+            <p class="hint" id="play-hint"></p>
+            <button class="play-btn" id="play">Play</button>
+          </div>
+        </main>
+        <div class="kb" id="kb"></div>
+      </section>
+    </div>
+
+    <div class="toast-rail" id="toasts"></div>
+
+    <script src="demo.js"></script>
+    <script>
+      (function () {
+        const {
+          ANSWER,
+          known,
+          score,
+          strongest,
+          KEYS,
+          LANGUAGES,
+          LENGTHS,
+          budget,
+          REDUCED,
+          toaster,
+          themeToggle,
+          SUN,
+        } = DEMO;
+
+        const overview = document.getElementById("overview");
+        const overviewScreen = document.getElementById("overview-screen");
+        const boardScreen = document.getElementById("board-screen");
+        const board = document.getElementById("board");
+        const kb = document.getElementById("kb");
+        const now = document.getElementById("now");
+        const playOver = document.getElementById("play-over");
+        const playHint = document.getElementById("play-hint");
+        const toast = toaster(document.getElementById("toasts"));
+        document.getElementById("theme").innerHTML = SUN;
+        themeToggle(document.getElementById("theme"));
+
+        /* What GET /daily answers: where the Player stands on all twelve, not the
+     Guesses themselves. Seeded here so every state is visible at once. */
+        const standing = {
+          "id-5": { status: "playing", guesses: 3 },
+          "su-6": { status: "won", guesses: 4 },
+          "jv-7": { status: "lost", guesses: 8 },
+        };
+
+        let lang = "en",
+          length = 5;
+        let typed = "",
+          played = [],
+          over = false,
+          busy = false,
+          started = false;
+        const keyState = new Map();
+        const answer = () => ANSWER[length];
+
+        /* ---- overview ---- */
+        function drawOverview() {
+          overview.replaceChildren();
+          const lead = document.createElement("p");
+          lead.className = "lead";
+          lead.textContent = "Twelve Dailies today. Play as many as you like, once each.";
+          overview.append(lead);
+
+          LANGUAGES.forEach((language, i) => {
+            const group = document.createElement("div");
+            group.className = "lang";
+            group.style.setProperty("--hue", language.hue);
+            group.style.setProperty("--i", i);
+            const head = document.createElement("h2");
+            head.innerHTML = "<span></span>";
+            head.append(language.name);
+            group.append(head);
+
+            const chips = document.createElement("div");
+            chips.className = "chips";
+            for (const l of LENGTHS) {
+              const state = standing[`${language.code}-${l}`];
+              const chip = document.createElement("button");
+              chip.className = "chip";
+              if (state) chip.dataset.state = state.status;
+              chip.innerHTML = `<b>${l}</b>`;
+              const note = document.createElement("small");
+              if (!state) note.textContent = "Not started";
+              else if (state.status === "won") note.textContent = `Solved in ${state.guesses}`;
+              else if (state.status === "lost") note.textContent = "Out of Guesses";
+              else note.textContent = "In progress";
+              chip.append(note);
+              if (state?.status === "playing") {
+                const dots = document.createElement("span");
+                dots.className = "dots";
+                for (let d = 0; d < budget(l); d += 1) {
+                  const dot = document.createElement("i");
+                  if (d < state.guesses) dot.dataset.on = "";
+                  dots.append(dot);
+                }
+                chip.append(dots);
+              }
+              chip.onclick = () => open(language.code, l);
+              chips.append(chip);
+            }
+            group.append(chips);
+            overview.append(group);
+          });
+        }
+
+        function show(screen) {
+          for (const s of [overviewScreen, boardScreen]) s.hidden = s !== screen;
+          if (REDUCED()) return;
+          screen.dataset.enter = "";
+          screen.addEventListener("animationend", () => delete screen.dataset.enter, {
+            once: true,
+          });
+        }
+
+        function open(code, l) {
+          lang = code;
+          length = l;
+          typed = "";
+          played = [];
+          over = false;
+          busy = false;
+          started = false;
+          keyState.clear();
+          const language = LANGUAGES.find((x) => x.code === code);
+          boardScreen.style.setProperty("--hue", language.hue);
+          now.innerHTML = "<span></span>";
+          now.append(`${language.name} · ${l} Tiles`);
+          playHint.textContent = `${budget(l)} Guesses.`;
+          playOver.hidden = false;
+          delete playOver.dataset.going;
+          board.dataset.idle = "";
+          kb.dataset.idle = "";
+          drawBoard();
+          paintKeys();
+          show(boardScreen);
+        }
+        document.getElementById("back").onclick = () => show(overviewScreen);
+
+        /* Pressing Play is what creates the Game — nothing does it on arrival. */
+        document.getElementById("play").onclick = () => {
+          started = true;
+          delete board.dataset.idle;
+          delete kb.dataset.idle;
+          playOver.dataset.going = "";
+          setTimeout(
+            () => {
+              playOver.hidden = true;
+            },
+            REDUCED() ? 0 : 250,
+          );
+        };
+
+        /* ---- board ---- */
+        function drawBoard() {
+          board.replaceChildren();
+          board.style.setProperty("--len", length);
+          for (let r = 0; r < budget(length); r += 1) {
+            const row = document.createElement("div");
+            row.className = "row";
+            row.style.setProperty("--len", length);
+            row.setAttribute("role", "row");
+            for (let c = 0; c < length; c += 1) {
+              const tile = document.createElement("div");
+              tile.className = "tile";
+              tile.setAttribute("role", "gridcell");
+              row.append(tile);
+            }
+            board.append(row);
+          }
+          paint();
+        }
+
+        function paint() {
+          [...board.children].forEach((row, r) => {
+            if (r < played.length) return;
+            const live = r === played.length && !over;
+            [...row.children].forEach((tile, c) => {
+              const letter = live ? (typed[c] ?? "") : "";
+              if (tile.textContent !== letter) {
+                tile.textContent = letter;
+                if (letter && !REDUCED()) {
+                  tile.dataset.pop = "";
+                  tile.addEventListener("animationend", () => delete tile.dataset.pop, {
+                    once: true,
+                  });
+                }
+              }
+              tile.toggleAttribute("data-filled", Boolean(letter));
+              tile.toggleAttribute("data-next", live && c === typed.length);
+            });
+          });
+        }
+
+        /* ---- keyboard ---- */
+        function drawKeyboard() {
+          kb.replaceChildren();
+          for (const row of KEYS) {
+            const line = document.createElement("div");
+            line.className = "kbrow";
+            for (const key of row) {
+              const button = document.createElement("button");
+              button.className = "key";
+              button.textContent = key === "DEL" ? "⌫" : key;
+              button.dataset.key = key;
+              if (key.length > 1) button.dataset.wide = "";
+              button.onclick = () => press(key);
+              line.append(button);
+            }
+            kb.append(line);
+          }
+        }
+        function paintKeys() {
+          for (const button of kb.querySelectorAll(".key")) {
+            const mark = keyState.get(button.dataset.key);
+            if (mark) button.dataset.mark = mark;
+            else delete button.dataset.mark;
+          }
+        }
+
+        /* ---- play ---- */
+        function press(key) {
+          if (!started || over || busy) return;
+          if (key === "ENTER") return submit();
+          if (key === "DEL") {
+            typed = typed.slice(0, -1);
+            return paint();
+          }
+          if (typed.length >= length) return;
+          typed += key;
+          paint();
+        }
+
+        function reject(message) {
+          const row = board.children[played.length];
+          if (!REDUCED()) {
+            row.dataset.reject = "";
+            row.addEventListener("animationend", () => delete row.dataset.reject, { once: true });
+          }
+          toast(message);
+        }
+
+        function submit() {
+          if (typed.length < length) return reject("Not enough Tiles.");
+          if (!known(typed)) return reject("Not in our Dictionary yet. Noted.");
+
+          const marks = score(typed, answer());
+          const row = board.children[played.length];
+          const word = typed;
+          busy = true;
+          played.push({ word, marks });
+          typed = "";
+
+          const half = REDUCED() ? 0 : 260;
+          if (!REDUCED()) row.dataset.flip = "";
+          setTimeout(() => {
+            [...row.children].forEach((tile, i) => {
+              tile.dataset.mark = marks[i];
+            });
+          }, half);
+          setTimeout(() => {
+            delete row.dataset.flip;
+            finish(row, word, marks);
+          }, half * 2);
+        }
+
+        function finish(row, word, marks) {
+          [...word].forEach((letter, i) =>
+            keyState.set(letter, strongest(keyState.get(letter), marks[i])),
+          );
+          paintKeys();
+          busy = false;
+
+          const won = marks.every((m) => m === "exact");
+          const lost = !won && played.length === budget(length);
+          if (!won && !lost) return paint();
+
+          over = true;
+          paint();
+          if (won && !REDUCED()) {
+            row.dataset.hop = "";
+            row.addEventListener("animationend", () => delete row.dataset.hop, { once: true });
+          }
+          standing[`${lang}-${length}`] = { status: won ? "won" : "lost", guesses: played.length };
+          setTimeout(() => showResult(won), won ? 400 : 140);
+        }
+
+        function showResult(won) {
+          const sheet = document.createElement("div");
+          sheet.className = "result";
+          const head = document.createElement("h2");
+          head.textContent = won ? `Solved in ${played.length}.` : "Out of Guesses.";
+          sheet.append(head);
+          if (!won) {
+            const reveal = document.createElement("p");
+            reveal.className = "answer";
+            reveal.textContent = answer();
+            sheet.append(reveal);
+          }
+          const line = document.createElement("p");
+          line.className = "hint";
+          line.textContent = "Eleven other Tracks are open today.";
+          sheet.append(line);
+          const again = document.createElement("button");
+          again.className = "btn";
+          again.textContent = "Back to Tracks";
+          again.onclick = () => {
+            sheet.remove();
+            drawOverview();
+            show(overviewScreen);
+          };
+          sheet.append(again);
+          document.body.append(sheet);
+        }
+
+        addEventListener("keydown", (event) => {
+          if (boardScreen.hidden || event.metaKey || event.ctrlKey || event.altKey) return;
+          if (event.key === "Enter") return press("ENTER");
+          if (event.key === "Backspace") return press("DEL");
+          if (/^[a-z]$/i.test(event.key)) press(event.key.toUpperCase());
+        });
+
+        drawOverview();
+        drawKeyboard();
+        show(overviewScreen);
+      })();
+    </script>
+  </body>
+</html>
