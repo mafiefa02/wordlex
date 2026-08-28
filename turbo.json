@@ -3,6 +3,12 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      // Turbo hands a task only the environment it declares. Vite bakes this
+      // into the bundle, so left undeclared it is stripped and the play build
+      // fails on Vercel with the variable plainly set on the project. Turbo
+      // infers `NEXT_PUBLIC_*` for the landing page from Next itself; there is
+      // no such inference here, so it is written down.
+      "env": ["VITE_API_URL"],
       "outputs": [".next/**", "!.next/cache/**", ".output/**", ".vercel/output/**", "dist/**"]
     },
     "check-types": {
