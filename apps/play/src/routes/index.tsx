@@ -4,6 +4,7 @@ import { type } from "arktype";
 import { useEffect, useRef } from "react";
 import { Logo } from "@wordlex/ui/components/logo";
 import { cn } from "@wordlex/ui/lib/utils";
+import { AuthControl } from "@/components/auth-control";
 import { Board } from "@/components/board";
 import { Keyboard } from "@/components/keyboard";
 import { ResultSheet } from "@/components/result-sheet";
@@ -47,7 +48,10 @@ function Home() {
         >
           <Logo size={22} />
         </a>
-        <span className="text-xs text-muted-foreground tabular-nums">{wordlexDay()}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-muted-foreground tabular-nums">{wordlexDay()}</span>
+          <AuthControl />
+        </div>
       </header>
 
       <TrackBar language={lang} length={length} />
@@ -72,6 +76,11 @@ function Game({ language, length }: { language: Language; length: Length }) {
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
+      // The sign-in dialog and the Account menu own every key while they are
+      // open, Escape included — otherwise typing over an open dialog would
+      // fill the board behind it. The result sheet is not one of these: it is
+      // a plain section, so Escape still puts it away.
+      if (event.target instanceof HTMLElement && event.target.closest("[role=dialog]")) return;
       if (event.key === "Escape") return latest.current.closeSheet();
       // A focused control owns its own Enter. Without this, tabbing to a key on
       // the on-screen keyboard and pressing it would submit the row as well as

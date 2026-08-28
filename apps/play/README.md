@@ -35,6 +35,24 @@ presses collapse into one Game rather than two (ADR 0024).
 Nothing creates a Game on arrival. A Game with no Guesses is Abandoned (ADR 0026)
 and would pollute every Answer's Solve Rate.
 
+## Signing in
+
+The header carries the same pair the landing page's does: a Sign in button when
+nobody is, the Account's avatar when someone is. Which one cannot be known
+server-side — the session cookie is on the API's origin (ADR 0006) — so the
+control asks `GET /me` on mount and holds the space until it answers.
+
+It is a dialog rather than a link back to the landing page, because the Track is
+in this app's URL: signing in from here comes straight back to the board being
+played, and today's Games come with it (ADR 0027). The panel inside it is
+`@wordlex/ui`'s, shared with the landing page so the wording cannot drift; this
+app supplies only how a sign-in starts. `/api/auth/*` answers in better-auth's
+shape rather than the envelope, which is why those two calls live in
+`src/lib/auth.ts` and not in `src/lib/api.ts`.
+
+Signing in from here needs this app's origin in the API's `ALLOWED_ORIGINS`: it
+bounds both the `Origin` check and the `callbackURL` a sign-in may name.
+
 ## The Answer
 
 A lost Game does not print the Answer until its WordleX Day is over, even though

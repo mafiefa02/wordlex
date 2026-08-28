@@ -9,8 +9,11 @@ import type { Language, Length, Mark, WordlexDay } from "@wordlex/domain";
  *
  * The fallback is for `pnpm dev` with no `.env`. It cannot reach a deployment:
  * `vite.config.ts` fails the build when `VITE_API_URL` is unset.
+ *
+ * Exported for `lib/auth.ts`, which talks to the same origin but not through
+ * `send` — `/api/auth/*` answers in better-auth's shape, not the envelope.
  */
-const base = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+export const base = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 
 /** Today's Daily for a Track, and where this Player stands on it. */
 export type Board = {
@@ -94,4 +97,25 @@ export type Submitted =
 
 export function submitGuess(track: Track, word: string, key: string) {
   return send<Submitted>("/guess", write(key, { ...track, word }));
+}
+
+/** What `GET /me` says about the Account whose session this browser holds. */
+export type Account = {
+  name: string;
+  email: string;
+  image: string | null;
+};
+
+/**
+ * Who is signed in, or `null` for nobody — the API answers 401 there, which is
+ * an answer rather than a failure. An unreachable API lands in the same place
+ * on purpose: not knowing who this is and offering to sign in is the safe way
+ * to be wrong.
+ *
+ * `/me` carries the Streak and the Badges too; this app reads neither yet, so
+ * only the half it uses is typed here.
+ */
+export async function readAccount(): Promise<Account | null> {
+  const result = await send<{ account: Account }>("/me");
+  return result.ok ? result.data.account : null;
 }
