@@ -54,9 +54,10 @@ export const authOptions = {
   },
   advanced: {
     useSecureCookies: env.secureCookies,
-    // Set on `.wordlex.com` in production so one sign-in covers all three
-    // subdomains (ADR 0006). Locally every app is on `localhost`, where a
-    // domain-scoped cookie is neither needed nor accepted.
+    // Set on `wordlex.afiefabd.com` in production so one sign-in covers all
+    // three subdomains (ADR 0006); a leading dot there would be a no-op.
+    // Locally every app is on `localhost`, where a domain-scoped cookie is
+    // neither needed nor accepted.
     ...(env.authCookieDomain
       ? { crossSubDomainCookies: { enabled: true, domain: env.authCookieDomain } }
       : {}),

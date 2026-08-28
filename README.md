@@ -39,9 +39,9 @@ deliberately left unformatted, so the ADRs keep their hand-wrapped prose.
 
 | Path | What it is |
 |---|---|
-| [`apps/landing`](apps/landing) | Next.js, `wordlex.com` |
-| [`apps/play`](apps/play) | TanStack Start, `play.wordlex.com` |
-| [`apps/api`](apps/api) | Fastify, `api.wordlex.com` |
+| [`apps/landing`](apps/landing) | Next.js, `wordlex.afiefabd.com` |
+| [`apps/play`](apps/play) | TanStack Start, `play.wordlex.afiefabd.com` |
+| [`apps/api`](apps/api) | Fastify, `api.wordlex.afiefabd.com` |
 | [`packages/domain`](packages/domain) | The vocabulary, as types and functions |
 | [`packages/ui`](packages/ui) | The design system and every component |
 

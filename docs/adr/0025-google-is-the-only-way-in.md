@@ -3,6 +3,11 @@
 _Fills in the half ADR 0022 deferred: it removed the anonymous Player and said a **Player**
 now means a signed-in Player, without saying how anyone signs in._
 
+_Amended: two names below are stale. The session cookie's domain is `wordlex.afiefabd.com`
+(a leading dot is a no-op), and the redirect URI registered with Google is
+`https://api.wordlex.afiefabd.com/api/auth/callback/google` — it must still match
+`BETTER_AUTH_URL` exactly. See the amendment on ADR 0006._
+
 better-auth is mounted on the API at `/api/auth/*`, with one social provider configured and
 nothing else. No email and password, no magic links, no other provider. Signing in creates a
 `player` row keyed to the Account, and every Game a signed-in Player starts carries that

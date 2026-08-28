@@ -117,7 +117,7 @@ export function setGameToken(reply: FastifyReply, today: Daily, gameId: string) 
   reply.setCookie(cookieName(today.language, today.length), gameId, {
     signed: true,
     httpOnly: true,
-    // play.wordlex.com and api.wordlex.com are the same site, so Lax is still
+    // play. and api.wordlex.afiefabd.com are the same site, so Lax is still
     // sent on the cross-origin call the board makes (ADR 0006). Preview
     // deployments are the exception: `vercel.app` is on the Public Suffix List,
     // so two preview URLs are cross-site and the browser drops this.

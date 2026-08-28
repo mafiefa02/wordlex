@@ -1,6 +1,6 @@
 # @wordlex/play
 
-The game, at `play.wordlex.com`. TanStack Start, so the Track lives in typed
+The game, at `play.wordlex.afiefabd.com`. TanStack Start, so the Track lives in typed
 search params — `/?lang=jv&length=7` — and the day's board is in the HTML on first
 paint (ADR 0001).
 

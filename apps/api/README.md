@@ -1,6 +1,6 @@
 # @wordlex/api
 
-Fastify server behind `api.wordlex.com`. Every Guess is scored here — the browser
+Fastify server behind `api.wordlex.afiefabd.com`. Every Guess is scored here — the browser
 never learns the Answer (ADR 0003).
 
 ```sh

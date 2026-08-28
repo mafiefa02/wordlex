@@ -1,5 +1,22 @@
 # Three subdomains on Vercel, with a shared auth cookie
 
+> **Amended 2026-08-28 (the domain).** The registrable domain is
+> `afiefabd.com`, not `wordlex.com`. The apps deploy to `wordlex.afiefabd.com`
+> (landing), `play.wordlex.afiefabd.com` (play) and `api.wordlex.afiefabd.com`
+> (API), and the session cookie's `Domain` is `wordlex.afiefabd.com`.
+>
+> Everything below still holds — three deployments, one shared parent, a cookie
+> on it, CORS against an explicit allowlist. Only the names change, and one
+> nesting level is added: the shared parent is now itself a subdomain. That is
+> what keeps the cookie off the rest of `afiefabd.com`; scoping it to the
+> registrable domain would send it to every other site there.
+>
+> A leading dot does nothing (RFC 6265 strips it), so `.wordlex.afiefabd.com`
+> and `wordlex.afiefabd.com` are the same cookie.
+>
+> This ADR owns the topology. Where another file still says `wordlex.com`, the
+> names here are the ones to read.
+
 All three apps deploy to Vercel: the landing page at `wordlex.com`, the play app at `play.wordlex.com`, and the Fastify API at `api.wordlex.com`. Vercel supports Fastify as a first-class backend framework and deploys it with no special configuration.
 
 better-auth lives in the Fastify app because that is what owns the database, and it sets its session cookie with `Domain=.wordlex.com` so all three subdomains can read it. This is the reason all three must sit under one registrable domain; the topology stops working the moment one of them moves elsewhere. CORS is configured with credentials against an explicit origin allowlist.

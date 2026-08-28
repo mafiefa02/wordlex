@@ -1,6 +1,6 @@
 # @wordlex/landing
 
-The marketing page at `wordlex.com`. Next.js, because it is a document that needs
+The marketing page at `wordlex.afiefabd.com`. Next.js, because it is a document that needs
 to be indexed and to render fast from the server (ADR 0001).
 
 ```sh

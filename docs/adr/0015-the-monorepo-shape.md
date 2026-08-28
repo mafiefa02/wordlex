@@ -5,6 +5,11 @@ belong to `apps/api`, but the rule is now enforced by who holds the connection s
 than by `apps/play` being unable to read a file. Amended again: the WordleX Day maths has one
 deliberate second copy, a `wordlex_day()` SQL function — ADR 0019 says why._
 
+_Amended again: the domains in the table are stale. The apps deploy to
+`wordlex.afiefabd.com`, `play.wordlex.afiefabd.com` and `api.wordlex.afiefabd.com` — see the
+amendment on ADR 0006, which owns the topology. Paths, ports and the shape of the workspace
+are unchanged._
+
 One pnpm workspace, driven by Turborepo, holding three apps and two shared packages:
 
 | Path | What it is | Port in dev |
