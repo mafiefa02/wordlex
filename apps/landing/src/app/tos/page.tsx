@@ -84,7 +84,10 @@ export default function Terms() {
               <h2 className="text-xl font-semibold tracking-[-0.02em] text-foreground">
                 Governing law
               </h2>
-              <p className="text-foreground">TODO: governing jurisdiction</p>
+              <p>
+                These terms are governed by the laws of the Republic of Indonesia, and any dispute
+                about them belongs to the Indonesian courts.
+              </p>
             </section>
           </div>
         </div>

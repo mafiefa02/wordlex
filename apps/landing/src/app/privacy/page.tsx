@@ -98,7 +98,13 @@ export default function Privacy() {
               </p>
               <p>
                 There is no delete button in the interface yet. To have an Account deleted, write to{" "}
-                <span className="text-foreground">TODO: contact email</span>.
+                <a
+                  className="text-foreground underline underline-offset-2"
+                  href="mailto:mafiefa.business@gmail.com"
+                >
+                  mafiefa.business@gmail.com
+                </a>
+                .
               </p>
             </section>
 
