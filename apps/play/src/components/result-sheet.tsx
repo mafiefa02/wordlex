@@ -1,6 +1,6 @@
 import { dayEndsAt, LANGUAGE_NAMES, type Language, type Length, type Mark } from "@wordlex/domain";
 import type { CSSProperties } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@wordlex/ui/components/button";
 import { LogoMark } from "@wordlex/ui/components/logo";
 import { cn } from "@wordlex/ui/lib/utils";
@@ -54,6 +54,20 @@ export function ResultSheet({
   const [label, setLabel] = useState("Copy result");
   const won = board.status === "won";
 
+  // A press anywhere that is not the sheet puts it away — the blurred board
+  // below it, and the Track bar above it that stays sharp. `pointerdown` rather
+  // than `click`, so the press that opened the sheet cannot close it again on
+  // the way back up, and so a result dragged over to be selected keeps it open.
+  const sheet = useRef<HTMLElement>(null);
+  useEffect(() => {
+    function onPointerDown(event: PointerEvent) {
+      if (event.target instanceof Node && sheet.current?.contains(event.target)) return;
+      onClose();
+    }
+    window.addEventListener("pointerdown", onPointerDown);
+    return () => window.removeEventListener("pointerdown", onPointerDown);
+  }, [onClose]);
+
   // One timer set for the rollover rather than a clock that ticks: the Answer
   // is worth showing the moment the Day it belonged to is over, and a board
   // left open across 00:00 WIB is the only way to be here when that happens.
@@ -76,6 +90,7 @@ export function ResultSheet({
 
   return (
     <section
+      ref={sheet}
       aria-label="Result"
       className="motion-safe:animate-sheet-up fixed inset-x-0 bottom-0 z-20 mx-auto grid max-w-[540px] justify-items-center gap-3 rounded-t-xl border-t border-border bg-popover px-5 pt-6 pb-[calc(24px+env(safe-area-inset-bottom))] shadow-[0_-20px_50px_-30px_rgb(0_0_0/0.6)]"
     >
