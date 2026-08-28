@@ -40,7 +40,9 @@ and would pollute every Answer's Solve Rate.
 The header carries the same pair the landing page's does: a Sign in button when
 nobody is, the Account's avatar when someone is. Which one cannot be known
 server-side — the session cookie is on the API's origin (ADR 0006) — so the
-control asks `GET /me` on mount and holds the space until it answers.
+control asks `GET /me` on mount and holds the space with a skeleton the size of
+the Sign in button until it answers — the transparent label inside it is what
+makes that size right, rather than a width kept in step with the word by hand.
 
 It is a dialog rather than a link back to the landing page, because the Track is
 in this app's URL: signing in from here comes straight back to the board being

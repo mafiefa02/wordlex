@@ -10,6 +10,7 @@ import {
 } from "@wordlex/ui/components/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@wordlex/ui/components/popover";
 import { SignInPanel } from "@wordlex/ui/components/sign-in-panel";
+import { Skeleton } from "@wordlex/ui/components/skeleton";
 import { cn } from "@wordlex/ui/lib/utils";
 import { type Account, readAccount } from "@/lib/api";
 import { signInWithGoogle, signOut } from "@/lib/auth";
@@ -76,9 +77,10 @@ function AccountMenu({ account }: { account: Account }) {
  * look like two products.
  *
  * Which one cannot be known here: the session cookie is on the API's origin and
- * this app is server-rendered, so the answer only arrives on mount. The space
- * is held rather than filled with a spinner — the header sits above a board
- * that is already filling itself in, and a second thing moving is noise.
+ * this app is server-rendered, so the answer only arrives on mount. Until it
+ * does the space is a skeleton of the control rather than a gap — the header
+ * settles into itself instead of a button appearing out of nowhere beside the
+ * date.
  */
 export function AuthControl() {
   const [account, setAccount] = useState<Account | null>(null);
@@ -98,17 +100,23 @@ export function AuthControl() {
     };
   }, []);
 
-  // An invisible copy of the control it will most likely become, so the header
-  // reserves exactly the right width instead of a guess at it. Signed out is
-  // the commoner state here — a Player needs no Account to play (ADR 0007).
+  // The control it will most likely become, drawn as a skeleton: same size, same
+  // place, so what arrives settles into the space rather than appearing beside
+  // it. The label is still in there, transparent — it is what makes the width
+  // exactly right rather than a number that has to be kept in step with the
+  // word. Signed out is the commoner state to guess at, since a Player needs no
+  // Account to play (ADR 0007); a signed-in header narrows to the avatar.
   if (!asked) {
     return (
-      <span
-        className={cn(buttonVariants({ variant: "outline", size: "sm" }), "invisible")}
+      <Skeleton
         aria-hidden
+        className={cn(
+          buttonVariants({ variant: "outline", size: "sm" }),
+          "border-transparent bg-muted text-transparent",
+        )}
       >
         Sign in
-      </span>
+      </Skeleton>
     );
   }
   return account ? <AccountMenu account={account} /> : <SignInDialog />;
