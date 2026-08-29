@@ -214,6 +214,13 @@ export function useGame(language: Language, length: Length) {
     setTyped((it) => (it.length >= length ? it : it + input));
   }
 
+  /**
+   * `useCallback` for the same reason as `load`: the note's dismiss timer keys
+   * off this, so an identity that changed every render would restart the
+   * countdown on every keystroke and leave the note up long after its time.
+   */
+  const dismissNote = useCallback(() => setNote(undefined), []);
+
   return {
     board,
     problem,
@@ -233,6 +240,6 @@ export function useGame(language: Language, length: Length) {
     openSheet: () => setSheet(true),
     closeSheet: () => setSheet(false),
     endShake: () => setShaking(false),
-    dismissNote: () => setNote(undefined),
+    dismissNote,
   };
 }
