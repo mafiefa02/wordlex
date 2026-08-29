@@ -167,10 +167,18 @@ function Game({ language, length }: { language: Language; length: Length }) {
         />
       ) : null}
 
+      {/* Above the sheet, so a note is never buried. Only then do presses fall
+          through it: one aimed at a sheet button under the note would otherwise
+          land here and read as a press outside the sheet. With the sheet down
+          the note sits over the keyboard's bottom row, where swallowing a press
+          is better than passing a hidden key an unseen one. */}
       {game.note ? (
         <output
           key={game.note.at}
-          className="motion-safe:animate-toast-in fixed inset-x-0 bottom-2 z-30 mx-auto w-max max-w-[92vw] rounded-lg bg-foreground px-3.5 py-2 text-center text-[13px] font-medium text-background shadow-[0_8px_24px_-12px_rgb(0_0_0/0.5)]"
+          className={cn(
+            "motion-safe:animate-toast-in fixed inset-x-0 bottom-2 z-30 mx-auto w-max max-w-[92vw] rounded-lg bg-foreground px-3.5 py-2 text-center text-[13px] font-medium text-background shadow-[0_8px_24px_-12px_rgb(0_0_0/0.5)]",
+            game.sheet && "pointer-events-none",
+          )}
         >
           {game.note.text}
         </output>
