@@ -43,8 +43,8 @@ having; and `oklch()` in a canvas `fillStyle` is not supported everywhere the to
 it fails by drawing nothing at all.
 
 The cost is that the design system can move and the card will not move with it. That is the
-same trade `docs/mocks/tokens.css` already makes, and a share image is exactly the kind of
-thing that should look the same in six months.
+same trade the mocks made, pinning a copy of the tokens rather than reading them, and a
+share image is exactly the kind of thing that should look the same in six months.
 
 ## The image shows the whole board; the clipboard shows only what was spent
 
@@ -77,6 +77,7 @@ this. The month name stays English on all twelve Tracks, which is the honest cos
 alternative was ISO everywhere, and a share is read by a person before it is read by anything
 else.
 
-Mocks: `docs/mocks/story-cards.html`. A is what shipped; B and C are kept, and B's take — the
-score as the whole picture — is the one to reach for if the card ever needs to work at
-thumbnail size.
+Mocks: three takes on the card — A the board, B the score, C the Guesses on their own — drawn at
+1080x1920 by the code that would ship. Removed from the repo and recoverable from the commit that
+deleted `docs/mocks/`. A is what shipped; B's take, the score as the whole picture, is the one to
+reach for if the card ever needs to work at thumbnail size.

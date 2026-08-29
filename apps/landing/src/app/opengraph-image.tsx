@@ -2,8 +2,9 @@ import { ImageResponse } from "next/og";
 
 /**
  * The card a link to this site unfurls with, in Slack, WhatsApp, Discord and
- * the rest. Take D from `docs/mocks/og-cards.html`: the board across the full
- * width, the headline above it, the promise below.
+ * the rest. The board across the full width, the headline above it, the
+ * promise below, so the board is the card rather than an illustration beside
+ * it.
  *
  * Seven Tiles rather than five, because the headline claims more than five
  * letters and this is the one layout with the width to show it. One row rather
@@ -15,6 +16,13 @@ import { ImageResponse } from "next/og";
  * inherit it, and their own titles are what differ. There is no `twitter-image`
  * beside it on purpose — with none, a card falls back to this one, and a second
  * file would be the same picture with a second way to go stale.
+ *
+ * This renders through Satori rather than a browser: **flexbox only, no CSS
+ * grid**, so every layout below stays inside what that renderer accepts. The
+ * type is Geist Regular rather than the site's 600, because `next/og` bundles
+ * Regular as its only font and Satori cannot read the variable `.woff2` that
+ * `packages/ui` ships; matching the site would mean committing a static
+ * SemiBold `.ttf`.
  */
 export const alt = "WordleX — a daily word game in four languages";
 export const size = { width: 1200, height: 630 };
