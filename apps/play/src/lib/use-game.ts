@@ -1,6 +1,7 @@
 import { guessBudget, type Language, type Length, type Mark } from "@wordlex/domain";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { type Board, readBoard, type Result, startGame, type Submitted, submitGuess } from "./api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { ApiError, type Board, readBoard, startGame, type Submitted, submitGuess } from "./api";
 
 /** How long a row takes to turn, Tile by Tile. Mirrors `app.css`. */
 const STAGGER = 75;
@@ -8,6 +9,9 @@ const TURN = 420;
 const HOP = 480;
 const revealMs = (length: number) => (length - 1) * STAGGER + TURN;
 const hopMs = (length: number) => (length - 1) * STAGGER + HOP;
+
+/** Long enough to read a short line, short enough to be gone before the next one. */
+const NOTE_MS = 1600;
 
 function stillness() {
   return (
@@ -32,37 +36,44 @@ const RANK: Record<Mark, number> = { absent: 0, present: 1, exact: 2 };
 /**
  * One Track's Game, start to finish.
  *
- * The board is read on mount and on every Track change, and it is always the
- * server's board rather than one built up here — `POST /guess` reads its own
- * board back for exactly that reason, and two ways of assembling one is how
- * they drift apart.
+ * The board is the query's data and nothing else: it is always the server's
+ * board rather than one built up here — `POST /guess` reads its own board back
+ * for exactly that reason, and two ways of assembling one is how they drift
+ * apart. A scored Guess writes the board it came back with into the cache, so
+ * there is still only the one copy.
+ *
+ * Everything else here is presentation — what is typed, which row is turning,
+ * whether the sheet is up — and stays local state, because none of it is the
+ * server's to know.
  */
 export function useGame(language: Language, length: Length) {
   const budget = guessBudget(length);
+  const queryClient = useQueryClient();
+  const boardKey = ["board", language, length];
 
-  const [board, setBoard] = useState<Board>();
-  const [problem, setProblem] = useState<{ code: string; text: string; at: number }>();
-  /**
-   * A read of the board is out. It starts true because the first read goes out
-   * on mount, and the Track keys this whole screen — so a Track change is a
-   * fresh mount and starts true again. Only "Try again" has to raise it.
-   */
-  const [reading, setReading] = useState(true);
+  /*
+    Kept per Track rather than thrown away on a Track change (ADR 0031), so
+    hopping back to a Track you have played shows its board at once and the
+    read that confirms it runs behind. `staleTime` is left at zero for that
+    reason: every mount re-reads.
+  */
+  const {
+    data: board,
+    error,
+    errorUpdatedAt,
+    isFetching: reading,
+    refetch,
+  } = useQuery({
+    queryKey: boardKey,
+    queryFn: () => readBoard({ language, length }),
+  });
+
   const [typed, setTyped] = useState("");
-  const [pending, setPending] = useState(false);
   /** The row mid-turn. The keyboard has not seen it yet. */
   const [revealing, setRevealing] = useState<number>();
   const [hopping, setHopping] = useState(false);
   const [shaking, setShaking] = useState(false);
   const [note, setNote] = useState<{ text: string; at: number }>();
-  /**
-   * A Guess that went out and did not come back. Only `UNREACHABLE` earns this:
-   * it is the one failure where the same Idempotency-Key is kept, so pressing
-   * Enter again re-sends the same Guess and cannot spend a second row. Every
-   * other code means the server answered, and a note that goes is right for
-   * those — there is nothing a second Enter would change.
-   */
-  const [unsent, setUnsent] = useState(false);
   const [sheet, setSheet] = useState(false);
 
   /**
@@ -77,64 +88,29 @@ export function useGame(language: Language, length: Length) {
   const startKey = useRef<string>(undefined);
   const guessKey = useRef<{ word: string; key: string }>(undefined);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const noteTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   function later(run: () => void, ms: number) {
     timers.current.push(setTimeout(run, ms));
   }
 
-  /**
-   * `useCallback` for the dependency, not for the memoisation ADR 0017 hands to
-   * the compiler: the effect below has to fire when the Track changes and not
-   * on every render, and "Try again" is the same request sent twice.
-   */
-  const load = useCallback(() => {
-    readBoard({ language, length })
-      .then((result) => {
-        if (result.ok) {
-          setBoard(result.data.game);
-          setProblem(undefined);
-        } else {
-          // `at` for the same reason a note carries one: two failures in a row
-          // are the same sentence, and an alert already on screen saying it
-          // again is silence. Remounting it is what gets it read out.
-          setProblem({ code: result.code, text: trouble(result.code), at: Date.now() });
-        }
-      })
-      // `finally`, not the `then` above: `readBoard` answers rather than
-      // rejects for anything the API can do, but a body outside the envelope
-      // would throw past it and leave the retry stuck on "Trying…" forever.
-      .finally(() => setReading(false));
-  }, [language, length]);
-
-  // Nothing here guards against a response arriving after unmount — setting
-  // state then is a no-op. The timers are what has to be cleared, since one
+  // The timers are the only thing that has to be undone on the way out: one
   // still pending would open a result sheet on a screen that has gone.
   useEffect(() => {
     const running = timers.current;
-    load();
     return () => {
       for (const timer of running) clearTimeout(timer);
+      clearTimeout(noteTimer.current);
       timers.current = [];
     };
-  }, [load]);
-
-  const guesses = board?.guesses ?? [];
-  const over = board !== undefined && board.status !== "playing";
-
-  /** Only rows that have finished turning have reached the keyboard. */
-  const keyMarks = new Map<string, Mark>();
-  for (const guess of revealing === undefined ? guesses : guesses.slice(0, revealing)) {
-    for (const [i, letter] of [...guess.word.toUpperCase()].entries()) {
-      const mark = guess.marks[i];
-      const held = keyMarks.get(letter);
-      if (mark !== undefined && (held === undefined || RANK[mark] > RANK[held])) {
-        keyMarks.set(letter, mark);
-      }
-    }
-  }
+  }, []);
 
   function say(text: string) {
+    // The note goes on its own rather than being taken away by a later render,
+    // and a second note restarts the count instead of inheriting the first's.
+    clearTimeout(noteTimer.current);
     setNote({ text, at: Date.now() });
+    noteTimer.current = setTimeout(() => setNote(undefined), NOTE_MS);
   }
 
   /** A word the board refuses: it spends no row, so the row says no and stays. */
@@ -153,76 +129,111 @@ export function useGame(language: Language, length: Length) {
     later(() => setSheet(true), quiet ? 0 : next.status === "won" ? 380 : 120);
   }
 
-  async function submit() {
-    if (!board) return;
-    if (typed.length < length) return refuse("Not enough Tiles.");
-
-    const word = typed;
-    const row = board.guesses.length;
-    const track = { language, length };
-    setUnsent(false);
-    setPending(true);
-
-    let result: Result<Submitted>;
-    try {
+  const guess = useMutation({
+    // The board read fired on mount is still out while the first Guess of a
+    // warm Track goes, and landing after it would put the pre-Guess board back
+    // — mid-flip, with `revealing` pointing at a row that no longer exists.
+    // Cancelling is what makes the write below the last word.
+    onMutate: () => queryClient.cancelQueries({ queryKey: boardKey }),
+    mutationFn: async (word: string): Promise<Submitted> => {
+      const track = { language, length };
       const key = keyForGuess(word);
-      result = await submitGuess(track, word, key);
-
-      // A Guess never creates a Game (ADR 0022), so the first one on a Track is
-      // answered with a 401 until there is a Game to attach it to. The same key
-      // goes out again — a second uuid would spend a second row.
-      if (!result.ok && result.code === "NO_GAME_TOKEN") {
-        const started = await startGame(track, keyForStart());
-        if (!started.ok) {
-          // The early return skips the key cleanup below, so the Guess keeps
-          // its key here too and Enter re-sends it. Same story, same message.
-          if (started.code === "UNREACHABLE") return setUnsent(true);
-          return say(trouble(started.code));
-        }
-        result = await submitGuess(track, word, key);
+      try {
+        return await submitGuess(track, word, key);
+      } catch (failure) {
+        // A Guess never creates a Game (ADR 0022), so the first one on a Track
+        // is answered with a 401 until there is a Game to attach it to. The
+        // only branch here: every other failure is the caller's to read.
+        if (!(failure instanceof ApiError) || failure.code !== "NO_GAME_TOKEN") throw failure;
+        await startGame(track, keyForStart());
+        // The same key goes out again — a second uuid would spend a second row.
+        return await submitGuess(track, word, key);
       }
-    } finally {
-      // Whatever went wrong, the keyboard has to come back. Without this a
-      // throw — `crypto.randomUUID` refuses outside a secure context — leaves
-      // the board silently dead.
-      setPending(false);
-    }
+    },
+    onSuccess: (submitted) => {
+      // The server answered, so the key has done its job.
+      guessKey.current = undefined;
 
-    // The server answered, so the key has done its job. It is kept only when it
-    // did not, which is the case a retry has to collapse.
-    if (result.ok || result.code !== "UNREACHABLE") guessKey.current = undefined;
+      // Not an error and not a Guess — our Dictionary is missing a word, and
+      // the API has written it down (ADR 0009). The row is not spent.
+      if (submitted.outcome === "unknown_word") {
+        return refuse("Not in our Dictionary yet. Noted.");
+      }
 
-    if (!result.ok) {
+      const next = submitted.game;
+      setTyped("");
+      queryClient.setQueryData(boardKey, next);
+      if (stillness()) return settle(next);
+      setRevealing(next.guesses.length - 1);
+      later(() => {
+        setRevealing(undefined);
+        settle(next);
+      }, revealMs(length));
+    },
+    onError: (failure) => {
+      // Nothing the API can do lands here — only the browser can, and
+      // `crypto.randomUUID` outside a secure context is the way it happens.
+      if (!(failure instanceof ApiError)) return say("Something went wrong.");
+
+      // The key is kept only where the server never answered, which is the case
+      // a retry has to collapse. `unsent` below reads the same condition, so the
+      // message and the key that makes it safe say the same thing.
+      if (failure.code !== "UNREACHABLE") guessKey.current = undefined;
+
       // The one failure that carries state: `details.game` is the finished
       // board, so there is nothing more to ask for.
-      if (result.code === "GAME_OVER") {
-        const ended = (result.details as { game?: Board } | undefined)?.game;
+      if (failure.code === "GAME_OVER") {
+        const ended = (failure.details as { game?: Board } | undefined)?.game;
         if (ended) {
-          setBoard(ended);
+          queryClient.setQueryData(boardKey, ended);
           setTyped("");
           setSheet(true);
         }
         return;
       }
-      if (result.code === "UNREACHABLE") return setUnsent(true);
-      return say(trouble(result.code));
-    }
+      // `UNREACHABLE` says its piece through `unsent`, which stands under the
+      // board until it is acted on rather than going after a second and a half.
+      if (failure.code !== "UNREACHABLE") say(trouble(failure.code));
+    },
+  });
 
-    // Not an error and not a Guess — our Dictionary is missing a word, and the
-    // API has written it down (ADR 0009). The row is not spent.
-    if (result.data.outcome === "unknown_word") {
-      return refuse("Not in our Dictionary yet. Noted.");
-    }
+  /**
+   * A Guess that went out and did not come back. Only `UNREACHABLE` earns this:
+   * it is the one failure where the same Idempotency-Key is kept, so pressing
+   * Enter again re-sends the same Guess and cannot spend a second row. Every
+   * other code means the server answered, and a note that goes is right for
+   * those — there is nothing a second Enter would change.
+   */
+  const unsent = guess.error instanceof ApiError && guess.error.code === "UNREACHABLE";
 
-    const next = result.data.game;
-    setTyped("");
-    setBoard(next);
-    if (stillness()) return settle(next);
-    setRevealing(row);
-    later(() => {
-      setRevealing(undefined);
-      settle(next);
-    }, revealMs(length));
+  /**
+   * The message stands in the rows the board is not using (ADR 0029), so it is
+   * only a message while there is no board to stand in for. A read that failed
+   * behind a board already on screen keeps that board: it is the last thing the
+   * server said and it is still worth playing.
+   *
+   * `at` for the same reason a note carries one: two failures in a row are the
+   * same sentence, and an alert already on screen saying it again is silence.
+   * Remounting it is what gets it read out.
+   */
+  const problem =
+    board === undefined && error instanceof ApiError
+      ? { code: error.code, text: trouble(error.code), at: errorUpdatedAt }
+      : undefined;
+
+  const guesses = board?.guesses ?? [];
+  const over = board !== undefined && board.status !== "playing";
+
+  /** Only rows that have finished turning have reached the keyboard. */
+  const keyMarks = new Map<string, Mark>();
+  for (const played of revealing === undefined ? guesses : guesses.slice(0, revealing)) {
+    for (const [i, letter] of [...played.word.toUpperCase()].entries()) {
+      const mark = played.marks[i];
+      const held = keyMarks.get(letter);
+      if (mark !== undefined && (held === undefined || RANK[mark] > RANK[held])) {
+        keyMarks.set(letter, mark);
+      }
+    }
   }
 
   function keyForStart() {
@@ -237,27 +248,24 @@ export function useGame(language: Language, length: Length) {
   }
 
   function press(input: string) {
-    if (board === undefined || over || pending || revealing !== undefined) return;
-    if (input === "ENTER") return void submit();
+    if (board === undefined || over || guess.isPending || revealing !== undefined) return;
+    if (input === "ENTER") {
+      if (typed.length < length) return refuse("Not enough Tiles.");
+      return guess.mutate(typed);
+    }
     // Editing the row makes the failure stale — "press Enter to try again" is
     // about the word that did not send, not whatever is being typed now. Only
     // a press that actually changes the row counts: in the unsent state the
     // row is always full, so a letter is a no-op, and it must not take the
-    // message with it.
+    // message with it. `reset` is what clears it, since the message is the
+    // mutation's own error rather than a flag beside it.
     if (input === "DEL") {
-      setUnsent(false);
+      guess.reset();
       return setTyped((it) => it.slice(0, -1));
     }
-    if (typed.length < length) setUnsent(false);
+    if (typed.length < length) guess.reset();
     setTyped((it) => (it.length >= length ? it : it + input));
   }
-
-  /**
-   * `useCallback` for the same reason as `load`: the note's dismiss timer keys
-   * off this, so an identity that changed every render would restart the
-   * countdown on every keystroke and leave the note up long after its time.
-   */
-  const dismissNote = useCallback(() => setNote(undefined), []);
 
   return {
     board,
@@ -268,7 +276,7 @@ export function useGame(language: Language, length: Length) {
     guesses,
     typed,
     over,
-    pending,
+    pending: guess.isPending,
     revealing,
     hopping,
     shaking,
@@ -281,12 +289,10 @@ export function useGame(language: Language, length: Length) {
     // of the document to try a second time.
     retry: () => {
       if (reading) return;
-      setReading(true);
-      load();
+      void refetch();
     },
     openSheet: () => setSheet(true),
     closeSheet: () => setSheet(false),
     endShake: () => setShaking(false),
-    dismissNote,
   };
 }

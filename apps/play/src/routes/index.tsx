@@ -1,7 +1,7 @@
 import { LANGUAGES, LENGTHS, type Language, type Length, wordlexDay } from "@wordlex/domain";
 import { createFileRoute } from "@tanstack/react-router";
 import { type } from "arktype";
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent } from "react";
 import { Button } from "@wordlex/ui/components/button";
 import { Logo } from "@wordlex/ui/components/logo";
 import { cn } from "@wordlex/ui/lib/utils";
@@ -65,46 +65,34 @@ function Home() {
 function Game({ language, length }: { language: Language; length: Length }) {
   const game = useGame(language, length);
 
-  // A physical keyboard is the main way in on a desktop. The listener is bound
-  // once and reads the latest `press` through a ref, so a re-render does not
-  // resubscribe.
-  const latest = useRef({ press: game.press, closeSheet: game.closeSheet });
-  useEffect(() => {
-    latest.current = { press: game.press, closeSheet: game.closeSheet };
+  // A physical keyboard is the main way in on a desktop. An effect event, so
+  // it reads the latest `game` every time it fires while the listener below
+  // stays bound once — a re-render must not resubscribe.
+  const onKey = useEffectEvent((event: KeyboardEvent) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    // An open popup — the sign-in dialog, the Account menu — owns every key
+    // while it is up, Escape included. Asked of the document rather than of
+    // the event's target, so a press made with focus on the backdrop cannot
+    // reach past the popup and put the result sheet away underneath it. Base
+    // UI gives both popups `role="dialog"` and marks them `data-open`.
+    if (document.querySelector('[role="dialog"][data-open]')) return;
+    if (event.key === "Escape") return game.closeSheet();
+
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    if (event.key === "Enter") {
+      // A focused control owns its own Enter, and only Enter. Without this,
+      // tabbing to a key on the on-screen keyboard and pressing it would
+      // submit the row as well as type the letter.
+      if (target?.closest("a, button")) return;
+      return game.press("ENTER");
+    }
+    if (event.key === "Backspace") game.press("DEL");
+    else if (/^[a-z]$/i.test(event.key)) game.press(event.key.toUpperCase());
   });
   useEffect(() => {
-    function onKey(event: KeyboardEvent) {
-      if (event.metaKey || event.ctrlKey || event.altKey) return;
-      // An open popup — the sign-in dialog, the Account menu — owns every key
-      // while it is up, Escape included. Asked of the document rather than of
-      // the event's target, so a press made with focus on the backdrop cannot
-      // reach past the popup and put the result sheet away underneath it. Base
-      // UI gives both popups `role="dialog"` and marks them `data-open`.
-      if (document.querySelector('[role="dialog"][data-open]')) return;
-      if (event.key === "Escape") return latest.current.closeSheet();
-
-      const target = event.target instanceof HTMLElement ? event.target : null;
-      if (event.key === "Enter") {
-        // A focused control owns its own Enter, and only Enter. Without this,
-        // tabbing to a key on the on-screen keyboard and pressing it would
-        // submit the row as well as type the letter.
-        if (target?.closest("a, button")) return;
-        return latest.current.press("ENTER");
-      }
-      if (event.key === "Backspace") latest.current.press("DEL");
-      else if (/^[a-z]$/i.test(event.key)) latest.current.press(event.key.toUpperCase());
-    }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-
-  const noted = game.note?.at;
-  const dismiss = game.dismissNote;
-  useEffect(() => {
-    if (noted === undefined) return;
-    const timer = setTimeout(dismiss, 1600);
-    return () => clearTimeout(timer);
-  }, [noted, dismiss]);
 
   return (
     <>

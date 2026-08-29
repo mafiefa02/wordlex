@@ -11,7 +11,7 @@ wrong here for reasons written down.
 Decisions live in `docs/adr/`, numbered and never rewritten — amend with a note at
 the top instead. What is still undecided lives in `docs/open-questions.md`.
 
-Four rules worth knowing before you edit:
+A few rules worth knowing before you edit:
 
 - The Dictionary and Answer Pool belong to `apps/api`. Nothing importable by the
   browser may ever hold them (ADR 0003).
@@ -28,6 +28,10 @@ Four rules worth knowing before you edit:
 - Google is the only way to sign in (ADR 0025), and `/api/auth/*` is the one route
   that answers in better-auth's shape rather than the envelope. Signing in mints
   the `player` row and carries over today's Games only (ADR 0027).
+- Everything `apps/play` asks the API for is a TanStack Query query or mutation, and
+  `api.ts` throws `ApiError` rather than returning a result (ADR 0031). Nothing there
+  should grow its own loading flag or its own copy of a server answer. The effects
+  left in that app subscribe to `window`, which is what effects are for.
 - The writes this app defines (`POST /game`, `POST /guess`) require an
   `Idempotency-Key` holding a uuid and store it on the row they create, so a
   retry cannot spend a second Guess or start a second Game. On `POST /game` that

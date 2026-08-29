@@ -37,29 +37,39 @@ export type ErrorCode =
   | (string & {});
 
 /**
- * The envelope (ADR 0023) turned into something worth branching on. Callers ask
- * `ok` rather than reading a status code, which is what the envelope was for.
+ * The error half of the envelope (ADR 0023), thrown rather than returned: every
+ * call here is a TanStack Query query or mutation, and a rejected promise is
+ * how Query is told something went wrong (ADR 0031). Callers branch on `code`.
  */
-export type Result<Data> =
-  | { ok: true; data: Data }
-  | { ok: false; code: ErrorCode; message: string; details?: unknown };
+export class ApiError extends Error {
+  constructor(
+    readonly code: ErrorCode,
+    message: string,
+    /** Only `GAME_OVER` carries anything, and what it carries is the finished Board. */
+    readonly details?: unknown,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
 
 type Envelope<Data> =
   | { data: Data }
   | { error: { code: string; message: string; details?: unknown } };
 
-async function send<Data>(path: string, init?: RequestInit): Promise<Result<Data>> {
+async function send<Data>(path: string, init?: RequestInit): Promise<Data> {
   let body: Envelope<Data>;
   try {
     const response = await fetch(`${apiUrl}${path}`, { credentials: "include", ...init });
     body = await response.json();
   } catch {
     // A network failure and a 500 are the same thing to a player: try again.
-    return { ok: false, code: "UNREACHABLE", message: "Could not reach the game." };
+    throw new ApiError("UNREACHABLE", "Could not reach the game.");
   }
-  return "error" in body
-    ? { ok: false, code: body.error.code, message: body.error.message, details: body.error.details }
-    : { ok: true, data: body.data };
+  if ("error" in body) {
+    throw new ApiError(body.error.code, body.error.message, body.error.details);
+  }
+  return body.data;
 }
 
 /** Every write carries a uuid the caller owns for the length of one intent. */
@@ -74,13 +84,15 @@ function write(key: string, payload: unknown): RequestInit {
 export type Track = { language: Language; length: Length };
 
 /** Reads only. Creates no Game and sets no cookie, so pressing nothing is free. */
-export function readBoard({ language, length }: Track) {
-  return send<{ game: Board }>(`/daily/${language}/${length}`);
+export async function readBoard({ language, length }: Track) {
+  const { game } = await send<{ game: Board }>(`/daily/${language}/${length}`);
+  return game;
 }
 
 /** The only thing that creates a Game (ADR 0022). Hands back the Game token. */
-export function startGame(track: Track, key: string) {
-  return send<{ game: Board }>("/game", write(key, track));
+export async function startGame(track: Track, key: string) {
+  const { game } = await send<{ game: Board }>("/game", write(key, track));
+  return game;
 }
 
 /**

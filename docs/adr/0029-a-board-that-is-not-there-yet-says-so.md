@@ -1,5 +1,17 @@
 # A board that is not there yet says so
 
+_Amended by ADR 0031: the board is a TanStack Query query now, so the names here have moved
+even though the screen has not. `reading` is the query's `isFetching`, and the failure the
+message reports is its `error`. "There is no board" is still the condition every surface
+below keys off, and it is still `data === undefined`, not `isFetching` — a read running
+behind a board that is already up changes nothing on screen._
+
+_One behaviour did change: a Track keeps its board once it has been read, so **returning**
+to a Track shows it at once rather than blanking. The treatment below is what a Track that
+has never been read still gets, and it is also what a failed **first** read gets. A read
+that fails behind a board already on screen keeps that board and says nothing — there is
+nothing useful to say, and the board is still worth playing._
+
 The board is read on mount, and until that read lands there is no board. For as long as
 that is true the Tiles draw fainter, the ring that means *type here* is withheld, and the
 keyboard is `inert` as well as dimmed. When the read fails, the message stands in the rows
