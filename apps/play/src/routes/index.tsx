@@ -2,6 +2,7 @@ import { LANGUAGES, LENGTHS, type Language, type Length, wordlexDay } from "@wor
 import { createFileRoute } from "@tanstack/react-router";
 import { type } from "arktype";
 import { useEffect, useRef } from "react";
+import { Button } from "@wordlex/ui/components/button";
 import { Logo } from "@wordlex/ui/components/logo";
 import { cn } from "@wordlex/ui/lib/utils";
 import { AuthControl } from "@/components/auth-control";
@@ -126,25 +127,38 @@ function Game({ language, length }: { language: Language; length: Length }) {
               shaking={game.shaking}
               pending={game.pending}
               over={game.over}
+              ready={game.board !== undefined}
+              problem={
+                game.problem ? (
+                  <>
+                    {/* Only the message is the alert. The control beside it
+                        changes label while a retry is out, and an alert around
+                        that would say the whole thing again each time. */}
+                    <p key={game.problem.at} role="alert" className="text-sm font-medium">
+                      {game.problem.text}
+                    </p>
+                    {/* A Track with no words has nothing to retry: the way out
+                        is the Track bar, which is the one live thing left. */}
+                    {game.problem.code === "TRACK_UNAVAILABLE" ? (
+                      <p className="text-sm text-muted-foreground">Pick another Track above.</p>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        aria-disabled={game.reading}
+                        className={cn(game.reading && "text-muted-foreground")}
+                        onClick={game.retry}
+                      >
+                        {game.reading ? "Trying…" : "Try again"}
+                      </Button>
+                    )}
+                  </>
+                ) : null
+              }
               onShakeEnd={game.endShake}
             />
             <p className="flex min-h-6 items-center text-sm text-muted-foreground">
-              {game.problem ? (
-                <>
-                  {game.problem.text}{" "}
-                  {game.problem.code === "TRACK_UNAVAILABLE" ? (
-                    "Try another Track."
-                  ) : (
-                    <button
-                      type="button"
-                      className="ml-1 underline underline-offset-4 hover:text-foreground"
-                      onClick={game.retry}
-                    >
-                      Try again
-                    </button>
-                  )}
-                </>
-              ) : game.over && !game.sheet ? (
+              {game.over && !game.sheet ? (
                 <button
                   type="button"
                   className="underline underline-offset-4 hover:text-foreground"
@@ -158,7 +172,7 @@ function Game({ language, length }: { language: Language; length: Length }) {
             </p>
           </main>
 
-          <Keyboard marks={game.keyMarks} onPress={game.press} />
+          <Keyboard marks={game.keyMarks} onPress={game.press} ready={game.board !== undefined} />
         </div>
 
         {game.sheet ? (

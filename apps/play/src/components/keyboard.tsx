@@ -16,16 +16,31 @@ const WIDE = "max-w-[66px] flex-[1.55] text-[11px] tracking-[0.04em]";
  * A key carries the strongest Mark that letter has earned, and only once the
  * row that earned it has finished turning — the keyboard should not answer
  * ahead of the board.
+ *
+ * Until `ready` it is `inert` as well as dimmed. Dimming alone would leave the
+ * keys tabbable and pressable while `press` drops everything they send.
+ *
+ * A finished Game is the other place `press` drops input, and this does not
+ * cover it: the keys still carry their Marks there, which is a record worth
+ * reading rather than fading, so it wants an answer of its own.
  */
 export function Keyboard({
   marks,
   onPress,
+  ready,
 }: {
   marks: Map<string, Mark>;
   onPress: (key: string) => void;
+  ready: boolean;
 }) {
   return (
-    <div className="mx-auto grid w-full max-w-[540px] gap-1.5 px-1.5 pt-1.5 pb-[calc(10px+env(safe-area-inset-bottom))]">
+    <div
+      inert={!ready}
+      className={cn(
+        "mx-auto grid w-full max-w-[540px] gap-1.5 px-1.5 pt-1.5 pb-[calc(10px+env(safe-area-inset-bottom))]",
+        !ready && "opacity-45",
+      )}
+    >
       {ROWS.map((row) => (
         <div key={row[0]} className="flex justify-center gap-[5px]">
           {row.map((key) => (
