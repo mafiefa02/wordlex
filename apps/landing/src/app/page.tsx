@@ -126,9 +126,10 @@ export default function Home() {
                 An Account is optional
               </h2>
               <p className="mt-3 text-muted-foreground">
-                You can play every Track without one. Signing in with Google is what makes a history
-                durable: Streaks, Badges and every Game from then on. Google is the only way in, and
-                we ask for nothing beyond your name, email and profile picture.
+                You can play every Track without one. Signing in is what makes a history durable:
+                Streaks, Badges and every Game from then on. You do it from the board itself —
+                Google is the only way in, and we ask for nothing beyond your name, email and
+                profile picture.
               </p>
             </div>
           </div>
