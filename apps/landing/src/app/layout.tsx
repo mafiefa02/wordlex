@@ -2,25 +2,33 @@ import type { Metadata } from "next";
 
 import { themeInitScript } from "@wordlex/ui/lib/theme";
 
-import "./globals.css";
+import { siteUrl } from "@/lib/site";
 
-const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+import "./globals.css";
 
 const description =
   "A daily word game in English, Bahasa Indonesia, Basa Sunda and Basa Jawa, at five, six and seven letters.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(site),
+  metadataBase: new URL(siteUrl),
   title: { default: "WordleX", template: "%s — WordleX" },
   description,
   // No `icons` block: icon.svg, apple-icon.png and favicon.ico already sit in
   // this directory and Next picks them up by filename. Declaring them here
   // would emit two of each.
+
+  // Only the parts that are the same on every page. Metadata merges shallowly,
+  // so a page setting just a title inherits this whole block — and a `title`,
+  // `description` or `url` pinned here would win over that page's own, leaving
+  // `/privacy` unfurling as the homepage. Left out, Next fills each from the
+  // page's own resolved values.
+  //
+  // No `twitter` block either: it is filled from this one, and `card` already
+  // defaults to `summary_large_image` once an image resolves.
   openGraph: {
     type: "website",
     siteName: "WordleX",
-    title: "WordleX",
-    description,
+    locale: "en_US",
   },
 };
 

@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/site-header";
 export const metadata: Metadata = {
   title: "Terms",
   description: "The terms you play WordleX under.",
+  alternates: { canonical: "/tos" },
 };
 
 const UPDATED = "28 August 2026";

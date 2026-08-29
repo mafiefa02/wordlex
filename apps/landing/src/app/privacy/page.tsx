@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/site-header";
 export const metadata: Metadata = {
   title: "Privacy",
   description: "What WordleX stores, who else sees it, and how to have it removed.",
+  alternates: { canonical: "/privacy" },
 };
 
 const UPDATED = "28 August 2026";

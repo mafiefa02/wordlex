@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { buttonVariants } from "@wordlex/ui/components/button";
 
 import { BoardField } from "@/components/board-field";
@@ -7,6 +9,11 @@ import { SiteHeader } from "@/components/site-header";
 import { TrackCards } from "@/components/track-cards";
 
 const playUrl = process.env.NEXT_PUBLIC_PLAY_URL ?? "http://localhost:3001";
+
+// Set on each indexable page rather than once in the layout: a canonical
+// inherited from a parent resolves to the parent's own URL, which would tell a
+// crawler that all three pages are the same one.
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 const STEPS = [
   {
