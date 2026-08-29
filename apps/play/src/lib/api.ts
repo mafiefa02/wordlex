@@ -10,7 +10,7 @@ import type { Language, Length, Mark, WordlexDay } from "@wordlex/domain";
  * The fallback is for `pnpm dev` with no `.env`. It cannot reach a deployment:
  * `vite.config.ts` fails the build when `VITE_API_URL` is unset.
  */
-const base = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+export const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 
 /** Today's Daily for a Track, and where this Player stands on it. */
 export type Board = {
@@ -51,7 +51,7 @@ type Envelope<Data> =
 async function send<Data>(path: string, init?: RequestInit): Promise<Result<Data>> {
   let body: Envelope<Data>;
   try {
-    const response = await fetch(`${base}${path}`, { credentials: "include", ...init });
+    const response = await fetch(`${apiUrl}${path}`, { credentials: "include", ...init });
     body = await response.json();
   } catch {
     // A network failure and a 500 are the same thing to a player: try again.

@@ -64,10 +64,11 @@ a default to reach for at zero traffic.
 
 **Reading the Candidate queue.** ADR 0009 records Unknown Words from day one. Reading them can wait for an admin UI; the data accumulates either way, and nothing is lost by looking late.
 
-**Sharing an Account's sign-in with the play app.** The API mounts better-auth (ADR 0025) and
-`GET /me`, `GET /me/history` and `POST /me/badges/seen` are there to be called. Nothing calls
-them yet: `apps/play` has no sign-in button, no profile and no contribution graph. The backend
-half is what shipped.
+**Showing an Account what it has earned.** Signing in now lives in `apps/play` and nowhere
+else — the header reads `GET /me` for a name and an avatar, and that is all it reads. The rest
+of what the API already answers is still uncalled: `GET /me/history` has no contribution graph
+to draw (ADR 0014), `POST /me/badges/seen` has no Badge toast to dismiss, and the Streak and
+Badges `GET /me` returns are thrown away. There is no profile screen for any of it to live on.
 
 **Answer Pool runway.** ADR 0005 notes that pool depth is an operational concern. Sundanese 5-letter has roughly nine months, so there is time before anyone needs a way to see this.
 

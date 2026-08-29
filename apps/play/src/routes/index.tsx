@@ -4,21 +4,18 @@ import { type } from "arktype";
 import { useEffect, useRef } from "react";
 import { Logo } from "@wordlex/ui/components/logo";
 import { cn } from "@wordlex/ui/lib/utils";
+import { AuthControl } from "@/components/auth-control";
 import { Board } from "@/components/board";
 import { Keyboard } from "@/components/keyboard";
 import { ResultSheet } from "@/components/result-sheet";
 import { HUE, TrackBar } from "@/components/track-bar";
+import { siteUrl } from "@/lib/site";
 import { useGame } from "@/lib/use-game";
 
 // The Track lives in the URL, which is the reason this app is TanStack Start
 // (ADR 0001). CONTEXT.md avoids "mode", so the length param is spelled out.
 const Lang = type.enumerated(...LANGUAGES);
 const Len = type.enumerated(...LENGTHS);
-
-// The landing page is a separate deployment (ADR 0006), so the lockup is a plain
-// href out of this app rather than a route. Same shape as the landing page's own
-// link back here.
-const siteUrl = import.meta.env.VITE_SITE_URL ?? "http://localhost:3000";
 
 export const Route = createFileRoute("/")({
   // Each half falls back on its own, so a junk length keeps the language the
@@ -39,7 +36,9 @@ function Home() {
 
   return (
     <div className={cn("flex h-dvh flex-col", HUE[lang])}>
-      <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+      {/* `py-2` rather than `py-3`: the controls are taller than the lockup was,
+          and this is a screen where the board wants every row it can get. */}
+      <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
         <a
           href={siteUrl}
           aria-label="WordleX home"
@@ -47,7 +46,10 @@ function Home() {
         >
           <Logo size={22} />
         </a>
-        <span className="text-xs text-muted-foreground tabular-nums">{wordlexDay()}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-muted-foreground tabular-nums">{wordlexDay()}</span>
+          <AuthControl />
+        </div>
       </header>
 
       <TrackBar language={lang} length={length} />
@@ -72,13 +74,23 @@ function Game({ language, length }: { language: Language; length: Length }) {
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
+      // An open popup — the sign-in dialog, the Account menu — owns every key
+      // while it is up, Escape included. Asked of the document rather than of
+      // the event's target, so a press made with focus on the backdrop cannot
+      // reach past the popup and put the result sheet away underneath it. Base
+      // UI gives both popups `role="dialog"` and marks them `data-open`.
+      if (document.querySelector('[role="dialog"][data-open]')) return;
       if (event.key === "Escape") return latest.current.closeSheet();
-      // A focused control owns its own Enter. Without this, tabbing to a key on
-      // the on-screen keyboard and pressing it would submit the row as well as
-      // type the letter.
-      if (event.target instanceof HTMLElement && event.target.closest("a, button")) return;
-      if (event.key === "Enter") latest.current.press("ENTER");
-      else if (event.key === "Backspace") latest.current.press("DEL");
+
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      if (event.key === "Enter") {
+        // A focused control owns its own Enter, and only Enter. Without this,
+        // tabbing to a key on the on-screen keyboard and pressing it would
+        // submit the row as well as type the letter.
+        if (target?.closest("a, button")) return;
+        return latest.current.press("ENTER");
+      }
+      if (event.key === "Backspace") latest.current.press("DEL");
       else if (/^[a-z]$/i.test(event.key)) latest.current.press(event.key.toUpperCase());
     }
     window.addEventListener("keydown", onKey);
