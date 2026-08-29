@@ -1,15 +1,23 @@
 @import "@wordlex/ui/globals.css";
 
 /*
-  The board's motion, and all of it one-shot: a Tile turns once when its Mark
-  lands, a row shakes once when a word is refused. Nothing repaints on a timer,
-  which is why a Guess in flight dims rather than spins.
+  The board's motion. All of it is one-shot — a Tile turns once when its Mark
+  lands, a row shakes once when a word is refused — with exactly one exception,
+  `row-waiting`, and the exception is deliberate.
+
+  A Guess in flight lasts an unknown length of time, so nothing that runs a
+  fixed number of times can cover it: whatever it does, it finishes, and then a
+  slow Guess looks the same as a dead one. `row-waiting` is the one thing here
+  that repaints on a timer, it runs only while a request is actually out, and it
+  moves opacity and `translate` alone so the compositor can carry it without a
+  layout or paint. Nothing else in this app may follow it.
 */
 @theme {
   --animate-tile-pop: tile-pop 150ms cubic-bezier(0.23, 1, 0.32, 1);
   --animate-tile-flip: tile-flip 420ms cubic-bezier(0.32, 0.72, 0, 1) both;
   --animate-tile-hop: tile-hop 480ms cubic-bezier(0.23, 1, 0.32, 1) both;
   --animate-row-sent: row-sent 220ms cubic-bezier(0.23, 1, 0.32, 1);
+  --animate-row-waiting: row-waiting 1100ms cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-row-shake: row-shake 380ms ease-out;
   --animate-sheet-up: sheet-up 320ms cubic-bezier(0.23, 1, 0.32, 1) both;
   --animate-mini-in: mini-in 300ms cubic-bezier(0.23, 1, 0.32, 1) both;
@@ -60,11 +68,25 @@
   }
 }
 
-/* The Guess has gone; the row lifts once to say so. What holds until the
-   response lands is a static dim, not this. */
+/* The Guess has gone; the row lifts once to say so. */
 @keyframes row-sent {
   45% {
     translate: 0 -4px;
+  }
+}
+
+/* ...and then the row settles, Tile by Tile, for as long as the Guess is out.
+   The Tiles carry their own `--i`, so the 75ms stagger `use-game.ts` reveals a
+   row at is what makes this read as a wave rather than a pulse. */
+@keyframes row-waiting {
+  0%,
+  100% {
+    opacity: 1;
+    translate: 0 0;
+  }
+  45% {
+    opacity: 0.45;
+    translate: 0 2px;
   }
 }
 

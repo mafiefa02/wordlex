@@ -55,6 +55,14 @@ export function useGame(language: Language, length: Length) {
   const [hopping, setHopping] = useState(false);
   const [shaking, setShaking] = useState(false);
   const [note, setNote] = useState<{ text: string; at: number }>();
+  /**
+   * A Guess that went out and did not come back. Only `UNREACHABLE` earns this:
+   * it is the one failure where the same Idempotency-Key is kept, so pressing
+   * Enter again re-sends the same Guess and cannot spend a second row. Every
+   * other code means the server answered, and a note that goes is right for
+   * those — there is nothing a second Enter would change.
+   */
+  const [unsent, setUnsent] = useState(false);
   const [sheet, setSheet] = useState(false);
 
   /**
@@ -152,6 +160,7 @@ export function useGame(language: Language, length: Length) {
     const word = typed;
     const row = board.guesses.length;
     const track = { language, length };
+    setUnsent(false);
     setPending(true);
 
     let result: Result<Submitted>;
@@ -164,7 +173,12 @@ export function useGame(language: Language, length: Length) {
       // goes out again — a second uuid would spend a second row.
       if (!result.ok && result.code === "NO_GAME_TOKEN") {
         const started = await startGame(track, keyForStart());
-        if (!started.ok) return say(trouble(started.code));
+        if (!started.ok) {
+          // The early return skips the key cleanup below, so the Guess keeps
+          // its key here too and Enter re-sends it. Same story, same message.
+          if (started.code === "UNREACHABLE") return setUnsent(true);
+          return say(trouble(started.code));
+        }
         result = await submitGuess(track, word, key);
       }
     } finally {
@@ -190,6 +204,7 @@ export function useGame(language: Language, length: Length) {
         }
         return;
       }
+      if (result.code === "UNREACHABLE") return setUnsent(true);
       return say(trouble(result.code));
     }
 
@@ -224,7 +239,16 @@ export function useGame(language: Language, length: Length) {
   function press(input: string) {
     if (board === undefined || over || pending || revealing !== undefined) return;
     if (input === "ENTER") return void submit();
-    if (input === "DEL") return setTyped((it) => it.slice(0, -1));
+    // Editing the row makes the failure stale — "press Enter to try again" is
+    // about the word that did not send, not whatever is being typed now. Only
+    // a press that actually changes the row counts: in the unsent state the
+    // row is always full, so a letter is a no-op, and it must not take the
+    // message with it.
+    if (input === "DEL") {
+      setUnsent(false);
+      return setTyped((it) => it.slice(0, -1));
+    }
+    if (typed.length < length) setUnsent(false);
     setTyped((it) => (it.length >= length ? it : it + input));
   }
 
@@ -239,6 +263,7 @@ export function useGame(language: Language, length: Length) {
     board,
     problem,
     reading,
+    unsent,
     budget,
     guesses,
     typed,

@@ -58,9 +58,10 @@ one where a player without a link meets the twelve first.
 ## The same in all three
 
 Design tokens only, both themes. Every motion is one-shot and gated on
-`prefers-reduced-motion`, with the Mark still landing when motion is off.
-Nothing repaints on a timer — no spinner while a Guess is in flight, no blinking
-caret. CONTEXT.md's words in the copy: Tile, Guess, Mark, Track, Daily, and an
+`prefers-reduced-motion`, with the Mark still landing when motion is off. No
+blinking caret. These three show a Guess in flight as a static dim, which is
+what the board did when they were drawn; it runs a wave there now, and that is
+the one thing in the app that repaints on a timer — see ADR 0030. CONTEXT.md's words in the copy: Tile, Guess, Mark, Track, Daily, and an
 Unknown Word that blames our Dictionary rather than the player.
 
 ## The Story card
