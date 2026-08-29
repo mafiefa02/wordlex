@@ -11,11 +11,9 @@ const PRIVACY_UPDATED = "2026-08-28";
 const TERMS_UPDATED = "2026-08-28";
 
 /**
- * Every page on this host worth indexing. `/login` is left out on purpose — it
- * carries `robots: { index: false }` and nothing links to it, so listing it
- * would ask a crawler to fetch a page we then tell it to forget.
+ * Every page on this host worth indexing, which is now all of them.
  *
- * The play app is not here either. It is a separate host (ADR 0006), a sitemap
+ * The play app is not here. It is a separate host (ADR 0006), a sitemap
  * may only speak for the host that serves it, and that app asks crawlers to
  * stay away.
  *

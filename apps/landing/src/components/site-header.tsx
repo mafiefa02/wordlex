@@ -3,8 +3,6 @@ import Link from "next/link";
 import { buttonVariants } from "@wordlex/ui/components/button";
 import { Logo } from "@wordlex/ui/components/logo";
 
-import { AuthControl } from "./auth-control";
-
 const playUrl = process.env.NEXT_PUBLIC_PLAY_URL ?? "http://localhost:3001";
 
 export function SiteHeader() {
@@ -14,12 +12,9 @@ export function SiteHeader() {
         <Link href="/" aria-label="WordleX home">
           <Logo size={26} />
         </Link>
-        <div className="flex items-center gap-3">
-          <a className={buttonVariants({ variant: "default" })} href={playUrl}>
-            Play today
-          </a>
-          <AuthControl />
-        </div>
+        <a className={buttonVariants({ variant: "default" })} href={playUrl}>
+          Play today
+        </a>
       </div>
     </header>
   );
