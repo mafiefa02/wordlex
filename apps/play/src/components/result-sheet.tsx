@@ -1,6 +1,7 @@
 import { dayEndsAt, LANGUAGE_NAMES, type Language, type Length } from "@wordlex/domain";
+import { useQuery } from "@tanstack/react-query";
 import type { CSSProperties } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { Button } from "@wordlex/ui/components/button";
 import { LogoMark } from "@wordlex/ui/components/logo";
 import { cn } from "@wordlex/ui/lib/utils";
@@ -48,13 +49,10 @@ export function ResultSheet({
   // below it, and the Track bar above it that stays sharp. `pointerdown` rather
   // than `click`, so the press that opened the sheet cannot close it again on
   // the way back up, and so a result dragged over to be selected keeps it open.
-  // Bound once and reading the latest `onClose` through a ref, like the keyboard
-  // listener on the screen above.
+  // The listener is bound once; `close` is an effect event, so it reads the
+  // latest `onClose` without the effect resubscribing on every render.
   const sheet = useRef<HTMLElement>(null);
-  const latest = useRef(onClose);
-  useEffect(() => {
-    latest.current = onClose;
-  });
+  const close = useEffectEvent(onClose);
   useEffect(() => {
     function onPointerDown(event: PointerEvent) {
       // Primary press only, so a right-click does not put the sheet away
@@ -62,7 +60,7 @@ export function ResultSheet({
       // a long-press is button 0 — so this covers a pointer and nothing else.
       if (event.button !== 0) return;
       if (event.target instanceof Node && sheet.current?.contains(event.target)) return;
-      latest.current();
+      close();
     }
     window.addEventListener("pointerdown", onPointerDown);
     return () => window.removeEventListener("pointerdown", onPointerDown);
@@ -72,29 +70,25 @@ export function ResultSheet({
     The card is drawn when the sheet opens rather than when the button is
     pressed: Safari refuses `navigator.share` once too long has passed since the
     gesture that led to it, and drawing is the slow half.
+
+    Not a request, but the same shape as one — slow, either a result or a
+    failure, and worth keeping once it lands — so it is asked for the same way
+    (ADR 0031). Nothing to retry: a canvas that would not draw once will not
+    draw on a second press, and the button says so and stays out of Copy's way.
   */
-  const [card, setCard] = useState<File>();
-  const [undrawable, setUndrawable] = useState(false);
-  // The deps are fixed for as long as this sheet exists — the route keys the
-  // whole screen by Track, and a board stops changing once the Game is over —
-  // so there is no stale card to clear on the way in.
-  useEffect(() => {
-    let live = true;
-    storyCard({ board, language, length, budget })
-      .then((blob) => {
-        if (live) {
-          setCard(new File([blob], cardName(board, language, length), { type: "image/png" }));
-        }
-      })
-      // Nothing to retry — a canvas that would not draw once will not draw on a
-      // second press. The button says so and stays out of the way of Copy.
-      .catch(() => {
-        if (live) setUndrawable(true);
-      });
-    return () => {
-      live = false;
-    };
-  }, [board, language, length, budget]);
+  const { data: card, isError: undrawable } = useQuery({
+    // The Track keys the whole screen and a board stops changing once the Game
+    // is over, so one Daily on one Track is one card.
+    queryKey: ["story-card", language, length, board.day],
+    // The one query here that is never re-asked. A board stops changing once
+    // the Game is over, so the card drawn from it cannot go stale — and without
+    // this, closing the sheet and reopening it redraws the whole canvas.
+    staleTime: Infinity,
+    queryFn: async () => {
+      const drawn = await storyCard({ board, language, length, budget });
+      return new File([drawn], cardName(board, language, length), { type: "image/png" });
+    },
+  });
 
   // Handing a file to the share sheet is the only route a browser has to
   // Instagram — there is no way to open the Stories composer directly. Where

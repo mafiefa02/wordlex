@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@wordlex/ui/components/avatar";
 import { Button, buttonVariants } from "@wordlex/ui/components/button";
 import {
@@ -42,31 +42,14 @@ function GoogleMark() {
  * separate sign-up: a first sign-in is what makes the Account.
  */
 function SignInDialog() {
-  const [failed, setFailed] = useState(false);
-  const [pending, setPending] = useState(false);
-
-  async function start() {
-    setFailed(false);
-    setPending(true);
-    try {
-      // Come back to the Track they were on when they asked to sign in.
-      await signInWithGoogle(window.location.href);
-    } catch {
-      setFailed(true);
-      setPending(false);
-    }
-  }
-
-  // The root stays mounted whether or not it is open, so closing has to clear
-  // the last attempt — otherwise reopening shows a failure that belongs to a
-  // try the player has already walked away from.
-  function reset() {
-    setFailed(false);
-    setPending(false);
-  }
+  // Come back to the Track they were on when they asked to sign in.
+  const signIn = useMutation({ mutationFn: () => signInWithGoogle(window.location.href) });
 
   return (
-    <Dialog onOpenChange={(open) => !open && reset()}>
+    // The root stays mounted whether or not it is open, so closing has to clear
+    // the last attempt — otherwise reopening shows a failure that belongs to a
+    // try the player has already walked away from.
+    <Dialog onOpenChange={(open) => !open && signIn.reset()}>
       <DialogTrigger className={buttonVariants({ variant: "outline" })}>Sign in</DialogTrigger>
       {/* Focus is not handed back to the trigger on close. This whole screen is
           driven by a window-level key listener, and a focused button owns Enter
@@ -85,12 +68,20 @@ function SignInDialog() {
             </DialogDescription>
           </div>
 
-          <Button size="lg" className="w-full" onClick={start} disabled={pending}>
+          {/* Disabled on success too: the promise resolves as the browser is
+              sent to Google, and a button that came back before the page went
+              would take a second press. */}
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={() => signIn.mutate()}
+            disabled={signIn.isPending || signIn.isSuccess}
+          >
             <GoogleMark />
             Continue with Google
           </Button>
 
-          {failed ? (
+          {signIn.isError ? (
             <p className="text-sm text-destructive" role="alert">
               That did not go through. Try again in a moment.
             </p>
@@ -159,29 +150,17 @@ function AccountMenu({ account }: { account: Account }) {
  * matches the signed-out control and only a signed-in header narrows on load.
  */
 export function AuthControl() {
-  const [account, setAccount] = useState<Account | null>(null);
-  const [asked, setAsked] = useState(false);
-
-  useEffect(() => {
-    let live = true;
-    getAccount()
-      .then((found) => {
-        if (live) setAccount(found);
-      })
-      .finally(() => {
-        if (live) setAsked(true);
-      });
-    return () => {
-      live = false;
-    };
-  }, []);
+  // `getAccount` answers `null` rather than failing when it cannot tell who
+  // this is, on purpose — so this query has no error path at all, and `isPending`
+  // is the only thing between asking and knowing.
+  const { data: account, isPending } = useQuery({ queryKey: ["account"], queryFn: getAccount });
 
   // The sign-in button's own box, filled rather than drawn: `text-transparent`
   // keeps the label in the layout, so the skeleton is exactly the width of the
   // control it stands in for instead of a guess at it. Deliberately not
   // animated — a pulse here would repaint for the whole of a fetch nobody is
   // waiting on.
-  if (!asked) {
+  if (isPending) {
     return (
       <span
         className={cn(

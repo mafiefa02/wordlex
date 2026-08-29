@@ -1,5 +1,11 @@
 # A Guess in flight is the one thing that repaints on a timer
 
+_Amended by ADR 0031: a Guess is a TanStack Query mutation now. `pending` is its
+`isPending`, and `unsent` is no longer a flag beside the request — it is read straight off
+the mutation's own error being `UNREACHABLE`, which is the same condition that keeps the
+`Idempotency-Key`. The two can no longer disagree. Clearing the message is `reset()`, and
+it still fires on exactly the presses named below and no others._
+
 While a Guess is out, the live row settles Tile by Tile and keeps settling until the answer
 lands. `row-waiting` in `apps/play/src/app.css` loops. It is the only animation in this app
 that does, and nothing else may follow it.
