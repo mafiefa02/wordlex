@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mocks — Open Graph cards</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="tokens.css" />
+    <style>
+      /* The page around the cards is scaffolding, not design. Everything that
+         matters is inside a .card, which is the real 1200x630 scaled by half. */
+      body {
+        padding: 24px 20px 64px;
+      }
+      h1 {
+        font-size: 19px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+      .lede {
+        margin-top: 6px;
+        max-width: 62ch;
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--muted-foreground);
+      }
+      h2 {
+        margin: 40px 0 4px;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+      h2 + p {
+        margin-bottom: 14px;
+        max-width: 62ch;
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--muted-foreground);
+      }
+      .frame {
+        width: 600px;
+        height: 315px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+      }
+      .card {
+        width: 1200px;
+        height: 630px;
+        transform: scale(0.5);
+        transform-origin: top left;
+        display: flex;
+        /* The card pins its own palette rather than reading the theme, for the
+           same reason the Story card does: a social card is not a themed
+           surface, and whoever renders it has no theme of ours to read. */
+        background: #16161a;
+        color: #fafafa;
+        font-family: Geist, system-ui, sans-serif;
+      }
+      /* The logo mark: four Tiles crossed, one per language hue, in the
+         Dictionary's order. Same geometry as packages/ui's Logo — tile 0.456 of
+         the box, radius 0.087, rotated 45 degrees. */
+      .mark {
+        position: relative;
+        flex: none;
+      }
+      .mark i {
+        position: absolute;
+        display: block;
+        transform: rotate(45deg);
+      }
+      .thumb {
+        width: 150px;
+        height: 79px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+      }
+      .thumb .card {
+        transform: scale(0.125);
+      }
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 14px;
+        padding: 10px 12px;
+        width: fit-content;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        font-size: 12px;
+        color: var(--muted-foreground);
+      }
+      .controls button {
+        padding: 5px 11px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+      .controls button[aria-pressed="true"] {
+        background: var(--foreground);
+        border-color: var(--foreground);
+        color: var(--background);
+      }
+      .row {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+      }
+      .row figcaption {
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--muted-foreground);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Open Graph cards — four takes</h1>
+    <p class="lede">
+      The 1200&times;630 image a link to <code>wordlex.afiefabd.com</code> unfurls with, in
+      Slack, WhatsApp, Discord, iMessage and the rest. Each card is the real size, shown at
+      half; the small one beside it is the same card at the size a chat client actually
+      renders a thumbnail. The site has none today, so a shared link is text on a blank
+      rectangle.
+    </p>
+    <p class="lede">
+      All four pin a dark palette and use CONTEXT.md's words. Whichever wins gets built as
+      <code>src/app/opengraph-image.tsx</code>, which draws through Satori — flexbox only,
+      no CSS grid — so every layout here is expressible in what that renderer accepts.
+    </p>
+
+    <h2>A — Hero</h2>
+    <p>
+      The landing page's own headline, at the landing page's own weight. Someone who follows
+      the link lands on the sentence they just read. Nothing but type and the mark, which is
+      the only take that survives being resized by a client that ignores the aspect ratio.
+    </p>
+    <div class="row">
+      <div class="frame">
+        <div class="card" id="a"></div>
+      </div>
+      <div class="thumb"><div class="card" id="a-thumb"></div></div>
+      <figcaption>
+        At thumbnail<br />the headline is<br />still readable
+      </figcaption>
+    </div>
+
+    <h2>B — Board</h2>
+    <p>
+      A part-played board beside the headline, Marks only, no letters — the same rule the
+      Story card holds. It says "word game" before a word of the copy is read, which is the
+      one thing type alone cannot do.
+    </p>
+    <div class="row">
+      <div class="frame">
+        <div class="card" id="b"></div>
+      </div>
+      <div class="thumb"><div class="card" id="b-thumb"></div></div>
+      <figcaption>
+        At thumbnail<br />the grid reads,<br />the words do not
+      </figcaption>
+    </div>
+
+    <h2>C — Twelve</h2>
+    <p>
+      The twelve Tracks as a wall, each in its language hue. The breadth <em>is</em> the
+      pitch, so this take makes the breadth the picture. The busiest of the three, and the
+      one that dies at thumbnail size.
+    </p>
+    <div class="row">
+      <div class="frame">
+        <div class="card" id="c"></div>
+      </div>
+      <div class="thumb"><div class="card" id="c-thumb"></div></div>
+      <figcaption>
+        At thumbnail<br />it is a smear<br />of colour
+      </figcaption>
+    </div>
+
+    <h2>D — Band</h2>
+    <p>
+      The board across the full width, with the headline above it and the promise below.
+      Seven Tiles rather than five, because the headline says "more than five letters" and
+      this is the one take with room to show it. The board stops being an illustration
+      beside the copy and becomes the thing the card is.
+    </p>
+    <div class="controls">
+      <span>Rows</span>
+      <button type="button" data-rows="1" aria-pressed="false">One</button>
+      <button type="button" data-rows="2" aria-pressed="true">Two</button>
+      <span>&mdash; one row leaves the headline room to stay large</span>
+    </div>
+    <div class="row">
+      <div class="frame">
+        <div class="card" id="d"></div>
+      </div>
+      <div class="thumb"><div class="card" id="d-thumb"></div></div>
+      <figcaption>
+        At thumbnail<br />the band survives,<br />two lines of type
+      </figcaption>
+    </div>
+
+    <script>
+      const HUES = ["#5289de", "#26a87f", "#c08a20", "#c44e9b"];
+      const MARK = { exact: "#17805f", present: "#d9a233", absent: "#3a3a41" };
+
+      /* The logo mark, built from the same numbers as packages/ui's Logo. */
+      function mark(size) {
+        const tile = size * 0.456;
+        const corners = ["top:0;left:0", "top:0;right:0", "bottom:0;left:0", "bottom:0;right:0"];
+        return `<span class="mark" style="width:${size}px;height:${size}px">${corners
+          .map(
+            (at, i) =>
+              `<i style="${at};width:${tile}px;height:${tile}px;border-radius:${Math.max(1, size * 0.087)}px;background:${HUES[i]}"></i>`,
+          )
+          .join("")}</span>`;
+      }
+
+      /* A board of Marks. No letters, ever — the rule ADR 0028 sets for the
+         Story card is the same rule here, and for the same reason: the image
+         outlives the WordleX Day it was made in. */
+      function board(rows, cols, cell, gap) {
+        const grid = rows
+          .map(
+            (row) =>
+              `<div style="display:flex;gap:${gap}px">${Array.from({ length: cols }, (_, i) => {
+                const m = row[i];
+                return `<div style="width:${cell}px;height:${cell}px;border-radius:${Math.round(cell * 0.14)}px;${
+                  m ? `background:${MARK[m]}` : "border:2px solid #303038"
+                }"></div>`;
+              }).join("")}</div>`,
+          )
+          .join("");
+        return `<div style="display:flex;flex-direction:column;gap:${gap}px">${grid}</div>`;
+      }
+
+      const ROWS = [
+        ["absent", "absent", "present", "present", "present"],
+        ["absent", "exact", "present", "absent", "present"],
+        ["absent", "absent", "exact", "absent", "exact"],
+        ["exact", "exact", "exact", "exact", "exact"],
+        [null, null, null, null, null],
+        [null, null, null, null, null],
+      ];
+
+      const TRACKS = [
+        ["English", "#5289de"],
+        ["Bahasa Indonesia", "#26a87f"],
+        ["Basa Sunda", "#c08a20"],
+        ["Basa Jawa", "#c44e9b"],
+      ];
+
+      const A = `
+        <div style="display:flex;flex-direction:column;justify-content:space-between;padding:76px 80px;width:100%">
+          <div style="display:flex;align-items:center;gap:18px">
+            ${mark(44)}
+            <span style="font-size:34px;font-weight:600;letter-spacing:-0.02em">WordleX</span>
+          </div>
+          <div style="display:flex;flex-direction:column">
+            <span style="font-size:78px;line-height:1.02;font-weight:600;letter-spacing:-0.03em">More than one language.</span>
+            <span style="font-size:78px;line-height:1.02;font-weight:600;letter-spacing:-0.03em;color:#9a9aa4">More than five letters.</span>
+          </div>
+          <span style="font-size:27px;color:#9a9aa4">A daily word game in four languages, at five, six and seven letters.</span>
+        </div>`;
+
+      const B = `
+        <div style="display:flex;align-items:center;width:100%">
+          <div style="display:flex;flex-direction:column;justify-content:space-between;padding:76px 0 76px 80px;flex:1;height:100%">
+            <div style="display:flex;align-items:center;gap:18px">
+              ${mark(44)}
+              <span style="font-size:34px;font-weight:600;letter-spacing:-0.02em">WordleX</span>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <span style="font-size:52px;line-height:1.06;font-weight:600;letter-spacing:-0.03em;white-space:nowrap">More than one language.</span>
+              <span style="font-size:52px;line-height:1.06;font-weight:600;letter-spacing:-0.03em;color:#9a9aa4;white-space:nowrap">More than five letters.</span>
+            </div>
+            <span style="font-size:25px;color:#9a9aa4">Twelve Tracks open every day. Free, no Account needed.</span>
+          </div>
+          <div style="display:flex;padding:0 80px">${board(ROWS, 5, 64, 10)}</div>
+        </div>`;
+
+      const C = `
+        <div style="display:flex;flex-direction:column;justify-content:space-between;padding:70px 80px;width:100%">
+          <div style="display:flex;align-items:center;gap:18px">
+            ${mark(44)}
+            <span style="font-size:34px;font-weight:600;letter-spacing:-0.02em">WordleX</span>
+          </div>
+          <span style="font-size:56px;line-height:1.06;font-weight:600;letter-spacing:-0.03em;max-width:700px">Twelve words are waiting.</span>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            ${TRACKS.map(
+              ([name, hue]) => `
+              <div style="display:flex;align-items:center;gap:14px">
+                <span style="width:250px;font-size:25px;color:#c9c9d1">${name}</span>
+                ${[5, 6, 7]
+                  .map(
+                    (n) =>
+                      `<div style="display:flex;align-items:center;justify-content:center;width:92px;height:52px;border-radius:10px;background:${hue};color:#12121a;font-size:24px;font-weight:600">${n}</div>`,
+                  )
+                  .join("")}
+              </div>`,
+            ).join("")}
+          </div>
+        </div>`;
+
+      /* Seven Tiles across the full width, two rows deep. Everything here is
+         derived so the band stays flush to the padding: at 60px sides the
+         content is 1080, so a 12px gap leaves 144 per Tile. */
+      const ROWS_7 = [
+        ["absent", "present", "absent", "absent", "present", "absent", "absent"],
+        ["exact", "exact", "exact", "exact", "exact", "exact", "exact"],
+      ];
+
+      /* One row is a different picture, not the last row of the two. Sliced off
+         the pair it would be the winning row — seven greens, which reads as a
+         colour swatch rather than a word game. A row mid-solve is what says
+         Wordle at a glance. */
+      const ROW_7_MIXED = [
+        ["exact", "absent", "present", "exact", "absent", "exact", "present"],
+      ];
+
+      /* The board is the fixed part — full width, always. What the rows leave
+         over is what the headline gets, so the type size is derived rather than
+         chosen twice. */
+      const D = (rows) => {
+        const type = rows === 1 ? 56 : 42;
+        return `
+        <div style="display:flex;flex-direction:column;justify-content:space-between;padding:52px 60px;width:100%">
+          <div style="display:flex;flex-direction:column;gap:${rows === 1 ? 30 : 24}px">
+            <div style="display:flex;align-items:center;gap:16px">
+              ${mark(36)}
+              <span style="font-size:28px;font-weight:600;letter-spacing:-0.02em">WordleX</span>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <span style="font-size:${type}px;line-height:1.06;font-weight:600;letter-spacing:-0.03em;white-space:nowrap">More than one language.</span>
+              <span style="font-size:${type}px;line-height:1.06;font-weight:600;letter-spacing:-0.03em;color:#9a9aa4;white-space:nowrap">More than five letters.</span>
+            </div>
+          </div>
+          <div style="display:flex">${board(rows === 1 ? ROW_7_MIXED : ROWS_7, 7, 144, 12)}</div>
+          <span style="font-size:27px;color:#9a9aa4">Twelve Tracks open every day. Free, no Account needed.</span>
+        </div>`;
+      };
+
+      function drawD(rows) {
+        for (const id of ["d", "d-thumb"]) document.getElementById(id).innerHTML = D(rows);
+        for (const button of document.querySelectorAll(".controls button")) {
+          button.setAttribute("aria-pressed", String(Number(button.dataset.rows) === rows));
+        }
+      }
+      for (const button of document.querySelectorAll(".controls button")) {
+        button.addEventListener("click", () => drawD(Number(button.dataset.rows)));
+      }
+      drawD(2);
+
+      for (const [id, html] of [["a", A], ["b", B], ["c", C]]) {
+        document.getElementById(id).innerHTML = html;
+        document.getElementById(`${id}-thumb`).innerHTML = html;
+      }
+    </script>
+  </body>
+</html>

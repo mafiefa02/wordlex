@@ -1,12 +1,13 @@
-# Play app mocks
+# Mocks
 
-Two sets, both opened straight from disk — no server needed:
+Three sets, all opened straight from disk — no server needed:
 
 ```
 docs/mocks/play-a-focus.html    the game screen, three takes
 docs/mocks/play-b-twelve.html
 docs/mocks/play-c-rail.html
 docs/mocks/story-cards.html     the Instagram Story card, three takes
+docs/mocks/og-cards.html        the landing page's social card, four takes
 ```
 
 ## The game screen
@@ -98,3 +99,48 @@ read by anything else (ADR 0028).
 browser has to Instagram — there is no way to open the Stories composer directly
 from the web. It does nothing useful on a desktop. Open this file on a phone to
 see whether Instagram actually appears in the sheet.
+
+## The social card
+
+`og-cards.html` — four takes on the 1200&times;630 image a link to the landing
+page unfurls with. Each card is the real size shown at half, with the same card
+beside it at the size a chat client actually renders a thumbnail — which is
+where the four stop being equivalent.
+
+| | A — Hero | B — Board | C — Twelve | D — Band |
+|---|---|---|---|---|
+| **The subject** | the headline | the headline, and a board | the twelve Tracks | the board |
+| **Says "word game"** | only by reading it | before a word is read | by reading it | before a word is read |
+| **At thumbnail** | the headline still lands | the grid reads, the words do not | a smear of colour | the band and two lines of type |
+| **Tiles** | — | five | — | seven |
+
+**D at one row is the pick**, and is what `apps/landing/src/app/opengraph-image.tsx`
+draws. It puts the board across the full width with the headline above it and the
+promise below, so the board is the card rather than an illustration beside it.
+Seven Tiles, not five: the headline claims more than five letters and this is
+the only take with the width to show it.
+
+The toggle above the card still switches the row count, because that was the
+decision and the alternative is worth being able to see. What the rows leave
+over is what the type gets: one row keeps the headline at 56px, two rows drops
+it to 42px to show a solve happening. The headline is what makes someone click,
+so the row lost. Note the single row carries its own Marks rather than a slice
+of the pair — sliced, it would be the winning row, and seven greens reads as a
+colour swatch rather than a word game.
+
+One thing the mock cannot show: the shipped card renders in **Geist Regular**,
+not the 600 the mocks use, because `next/og` bundles Geist Regular as its only
+font and Satori cannot read the variable `.woff2` that `packages/ui` ships.
+Matching the site's weight means committing a static SemiBold `.ttf`.
+
+Whichever is picked gets built as `apps/landing/src/app/opengraph-image.tsx`,
+which draws through Satori rather than a browser: **flexbox only, no CSS grid**,
+so every layout in this file is already inside what that renderer accepts.
+
+Two rules carried over from the Story card, and neither is up for grabs:
+
+- **No letters and no Answer.** The board in B is Marks only. A social card is
+  cached by every client that ever saw it, so it outlives any WordleX Day.
+- **The card pins its own palette** rather than reading the theme. Whoever
+  renders an unfurl has no theme of ours to read, so light or dark is a choice
+  made once, in code.
