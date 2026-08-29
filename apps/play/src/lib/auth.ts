@@ -1,14 +1,16 @@
+import { apiUrl } from "./api";
+
 /**
- * The whole client for a Google-only sign-in: start it, end it, ask who is
- * signed in. Three calls is not enough to justify pulling better-auth's client
- * into the app, and the endpoint shapes are version-coupled either way.
+ * The whole client for a Google-only sign-in (ADR 0025): start it, end it, ask
+ * who is signed in. Separate from `api.ts` because `/api/auth/*` is the one
+ * route that answers in better-auth's shape rather than the envelope (ADR
+ * 0023), so none of this can go through `send`.
  *
  * Every call here has to run in the browser. `apps/api` rejects any non-GET
- * whose `Origin` is not allowlisted, and a Route Handler or Server Action sends
- * no Origin at all — so a server-side sign-in fails with a 403 that looks like
- * a CORS problem and is not one.
+ * whose `Origin` is not allowlisted, and this app's server sends no Origin at
+ * all — so a sign-in started during SSR fails with a 403 that looks like a CORS
+ * problem and is not one.
  */
-const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 /** What `GET /me` tells us about the signed-in Account. */
 export type Account = {
@@ -22,7 +24,7 @@ export type Account = {
  * is assigned rather than fetched. Resolves only if the redirect never happens.
  */
 export async function signInWithGoogle(callbackURL: string): Promise<void> {
-  const response = await fetch(`${api}/api/auth/sign-in/social`, {
+  const response = await fetch(`${apiUrl}/api/auth/sign-in/social`, {
     method: "POST",
     credentials: "include",
     // Without this the API's body parser leaves the body undefined and the
@@ -43,7 +45,7 @@ export async function signInWithGoogle(callbackURL: string): Promise<void> {
  */
 export async function signOut(): Promise<void> {
   try {
-    await fetch(`${api}/api/auth/sign-out`, {
+    await fetch(`${apiUrl}/api/auth/sign-out`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -62,7 +64,7 @@ export async function signOut(): Promise<void> {
  */
 export async function getAccount(): Promise<Account | null> {
   try {
-    const response = await fetch(`${api}/me`, { credentials: "include" });
+    const response = await fetch(`${apiUrl}/me`, { credentials: "include" });
     if (!response.ok) return null;
 
     const body: { data?: { account?: Account } } = await response.json();
