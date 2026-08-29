@@ -157,8 +157,20 @@ function Game({ language, length }: { language: Language; length: Length }) {
               }
               onShakeEnd={game.endShake}
             />
-            <p className="flex min-h-6 items-center text-sm text-muted-foreground">
-              {game.over && !game.sheet ? (
+            {/* Two lines' worth of room, always. The only thing that ever needs
+                both is a Guess that did not send, and reserving it there is
+                what stops the board jumping at the moment one fails — the
+                `410px` chrome constant in `board.tsx` counts this strip, so the
+                two move together. The alert wraps both lines rather than the
+                first: the second is the one that says what to do, and it has
+                nothing else to surface it. */}
+            <p className="grid min-h-11 place-items-center gap-0.5 text-center text-sm text-muted-foreground">
+              {game.unsent ? (
+                <span role="alert" className="grid justify-items-center gap-0.5">
+                  <span className="font-medium text-foreground">Could not send that Guess.</span>
+                  <span>Press Enter to try again.</span>
+                </span>
+              ) : game.over && !game.sheet ? (
                 <button
                   type="button"
                   className="underline underline-offset-4 hover:text-foreground"
