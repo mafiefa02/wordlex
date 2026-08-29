@@ -48,15 +48,25 @@ export function ResultSheet({
   // below it, and the Track bar above it that stays sharp. `pointerdown` rather
   // than `click`, so the press that opened the sheet cannot close it again on
   // the way back up, and so a result dragged over to be selected keeps it open.
+  // Bound once and reading the latest `onClose` through a ref, like the keyboard
+  // listener on the screen above.
   const sheet = useRef<HTMLElement>(null);
+  const latest = useRef(onClose);
+  useEffect(() => {
+    latest.current = onClose;
+  });
   useEffect(() => {
     function onPointerDown(event: PointerEvent) {
+      // Primary press only, so a right-click does not put the sheet away
+      // underneath the context menu it is opening. Touch has no equivalent —
+      // a long-press is button 0 — so this covers a pointer and nothing else.
+      if (event.button !== 0) return;
       if (event.target instanceof Node && sheet.current?.contains(event.target)) return;
-      onClose();
+      latest.current();
     }
     window.addEventListener("pointerdown", onPointerDown);
     return () => window.removeEventListener("pointerdown", onPointerDown);
-  }, [onClose]);
+  }, []);
 
   /*
     The card is drawn when the sheet opens rather than when the button is
