@@ -41,7 +41,13 @@ export function useGame(language: Language, length: Length) {
   const budget = guessBudget(length);
 
   const [board, setBoard] = useState<Board>();
-  const [problem, setProblem] = useState<{ code: string; text: string }>();
+  const [problem, setProblem] = useState<{ code: string; text: string; at: number }>();
+  /**
+   * A read of the board is out. It starts true because the first read goes out
+   * on mount, and the Track keys this whole screen — so a Track change is a
+   * fresh mount and starts true again. Only "Try again" has to raise it.
+   */
+  const [reading, setReading] = useState(true);
   const [typed, setTyped] = useState("");
   const [pending, setPending] = useState(false);
   /** The row mid-turn. The keyboard has not seen it yet. */
@@ -74,14 +80,22 @@ export function useGame(language: Language, length: Length) {
    * on every render, and "Try again" is the same request sent twice.
    */
   const load = useCallback(() => {
-    readBoard({ language, length }).then((result) => {
-      if (result.ok) {
-        setBoard(result.data.game);
-        setProblem(undefined);
-      } else {
-        setProblem({ code: result.code, text: trouble(result.code) });
-      }
-    });
+    readBoard({ language, length })
+      .then((result) => {
+        if (result.ok) {
+          setBoard(result.data.game);
+          setProblem(undefined);
+        } else {
+          // `at` for the same reason a note carries one: two failures in a row
+          // are the same sentence, and an alert already on screen saying it
+          // again is silence. Remounting it is what gets it read out.
+          setProblem({ code: result.code, text: trouble(result.code), at: Date.now() });
+        }
+      })
+      // `finally`, not the `then` above: `readBoard` answers rather than
+      // rejects for anything the API can do, but a body outside the envelope
+      // would throw past it and leave the retry stuck on "Trying…" forever.
+      .finally(() => setReading(false));
   }, [language, length]);
 
   // Nothing here guards against a response arriving after unmount — setting
@@ -224,6 +238,7 @@ export function useGame(language: Language, length: Length) {
   return {
     board,
     problem,
+    reading,
     budget,
     guesses,
     typed,
@@ -236,7 +251,14 @@ export function useGame(language: Language, length: Length) {
     sheet,
     keyMarks,
     press,
-    retry: load,
+    // Guarded rather than disabled: a disabled control loses focus mid-click,
+    // so a player who got here by keyboard would have to tab back from the top
+    // of the document to try a second time.
+    retry: () => {
+      if (reading) return;
+      setReading(true);
+      load();
+    },
     openSheet: () => setSheet(true),
     closeSheet: () => setSheet(false),
     endShake: () => setShaking(false),

@@ -1,5 +1,5 @@
 import type { Length, Mark } from "@wordlex/domain";
-import type { AnimationEvent, CSSProperties } from "react";
+import type { AnimationEvent, CSSProperties, ReactNode } from "react";
 import { cn } from "@wordlex/ui/lib/utils";
 
 /*
@@ -30,7 +30,20 @@ const TILE = cn(
   // saying where the next Tile is.
   "data-next:[border-color:color-mix(in_oklch,var(--hue),transparent_30%)] data-next:[box-shadow:inset_0_0_0_1px_color-mix(in_oklch,var(--hue),transparent_30%)]",
   "data-mark:border-transparent data-mark:bg-(--mark-bg) data-mark:text-(--mark-fg)",
+  // Drawn fainter while there is no board, so the grid reads as a frame rather
+  // than as six rows waiting for a Guess.
+  "data-blank:[border-color:color-mix(in_oklch,var(--border),transparent_45%)]",
 );
+
+/**
+ * The rows a message stands in, straddling the board's middle so it lands in
+ * the centre whatever the Track. A budget with no middle *pair* — seven
+ * Guesses, on a 6-Tile Track — gives up a third row rather than sit off-centre.
+ */
+function middleRows(budget: number) {
+  const half = Math.floor(budget / 2);
+  return budget % 2 === 0 ? [half - 1, half] : [half - 1, half, half + 1];
+}
 
 type Guess = { word: string; marks: Mark[] };
 
@@ -42,6 +55,12 @@ type Guess = { word: string; marks: Mark[] };
  * server and not come back. The second is a static dim rather than a spinner,
  * because it lasts an unknown length of time and nothing here may repaint on a
  * timer.
+ *
+ * Until `ready`, there is no board: the Tiles draw faint and the ring is
+ * withheld, because a ring on the first Tile says "type here" and nothing typed
+ * would land. A `problem` stands in the rows the board is not using — the
+ * message is read where the board would be rather than under it, and the grid
+ * keeps its size so nothing moves when it arrives.
  */
 export function Board({
   length,
@@ -53,6 +72,8 @@ export function Board({
   shaking,
   pending,
   over,
+  ready,
+  problem,
   onShakeEnd,
 }: {
   length: Length;
@@ -64,13 +85,17 @@ export function Board({
   shaking: boolean;
   pending: boolean;
   over: boolean;
+  ready: boolean;
+  problem?: ReactNode;
   onShakeEnd: () => void;
 }) {
-  const live = over ? -1 : guesses.length;
+  // With no board there is no live row, which is what withholds the ring.
+  const live = ready && !over ? guesses.length : -1;
+  const stood = problem ? middleRows(budget) : [];
 
   return (
     <section
-      className={BOARD}
+      className={cn(BOARD, "relative")}
       style={{ "--len": length, "--rows": budget } as CSSProperties}
       aria-label="Board"
     >
@@ -84,6 +109,9 @@ export function Board({
             key={row}
             className={cn(
               ROW,
+              // Hidden rather than dropped: the row keeps its space, so the
+              // board is the same size with the message in it as without.
+              stood.includes(row) && "invisible",
               row === live && pending && "motion-safe:animate-row-sent opacity-60",
               row === live && shaking && "motion-safe:animate-row-shake",
             )}
@@ -110,6 +138,7 @@ export function Board({
                   )}
                   style={{ "--i": column } as CSSProperties}
                   data-mark={played?.marks[column]}
+                  data-blank={ready ? undefined : true}
                   data-filled={row === live && letter !== "" ? true : undefined}
                   data-next={row === live && column === typed.length ? true : undefined}
                 >
@@ -120,6 +149,14 @@ export function Board({
           </div>
         );
       })}
+
+      {/* Bleeds to the padding `main` gives the board, so a short line is not
+          made to wrap by a narrow Track. */}
+      {problem ? (
+        <div className="absolute -inset-x-3 top-1/2 grid -translate-y-1/2 justify-items-center gap-2 text-center">
+          {problem}
+        </div>
+      ) : null}
     </section>
   );
 }
