@@ -11,6 +11,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@wordlex/ui/components/popover";
 import { cn } from "@wordlex/ui/lib/utils";
 import { type Account, getAccount, signInWithGoogle, signOut } from "@/lib/auth";
+import { clearBoardSnapshots } from "@/lib/board-snapshot";
 import { siteUrl } from "@/lib/site";
 
 /** Google requires its own mark on the button that starts a Google sign-in. */
@@ -111,6 +112,7 @@ function SignInDialog() {
 }
 
 async function end() {
+  clearBoardSnapshots();
   await signOut();
   // Reload rather than clear the state locally: the header then re-derives who
   // this is from the API, and the board re-reads as whoever is left.

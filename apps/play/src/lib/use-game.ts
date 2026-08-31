@@ -1,7 +1,8 @@
-import { guessBudget, type Language, type Length, type Mark } from "@wordlex/domain";
+import { guessBudget, type Language, type Length, type Mark, wordlexDay } from "@wordlex/domain";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { ApiError, type Board, readBoard, startGame, type Submitted, submitGuess } from "./api";
+import { readBoardSnapshot, saveBoardSnapshot } from "./board-snapshot";
 
 /** How long a row takes to turn, Tile by Tile. Mirrors `app.css`. */
 const STAGGER = 75;
@@ -28,6 +29,7 @@ const TROUBLE: Record<string, string> = {
   UNREACHABLE: "Could not reach the game.",
   TRACK_UNAVAILABLE: "No words for this Track yet.",
   IDEMPOTENCY_KEY_REUSED: "That Game is already being played.",
+  BOARD_EXPIRED: "This board has expired. Refresh for the next Daily.",
 };
 const trouble = (code: string) => TROUBLE[code] ?? "Something went wrong.";
 
@@ -50,6 +52,7 @@ export function useGame(language: Language, length: Length) {
   const budget = guessBudget(length);
   const queryClient = useQueryClient();
   const boardKey = ["board", language, length];
+  const track = { language, length };
 
   /*
     Kept per Track rather than thrown away on a Track change (ADR 0031), so
@@ -65,7 +68,12 @@ export function useGame(language: Language, length: Length) {
     refetch,
   } = useQuery({
     queryKey: boardKey,
-    queryFn: () => readBoard({ language, length }),
+    queryFn: async () => {
+      const next = await readBoard(track);
+      saveBoardSnapshot(track, next);
+      return next;
+    },
+    initialData: () => readBoardSnapshot(track),
   });
 
   const [typed, setTyped] = useState("");
@@ -129,6 +137,11 @@ export function useGame(language: Language, length: Length) {
     later(() => setSheet(true), quiet ? 0 : next.status === "won" ? 380 : 120);
   }
 
+  function setBoard(next: Board) {
+    queryClient.setQueryData(boardKey, next);
+    saveBoardSnapshot(track, next);
+  }
+
   const guess = useMutation({
     // The board read fired on mount is still out while the first Guess of a
     // warm Track goes, and landing after it would put the pre-Guess board back
@@ -136,15 +149,17 @@ export function useGame(language: Language, length: Length) {
     // Cancelling is what makes the write below the last word.
     onMutate: () => queryClient.cancelQueries({ queryKey: boardKey }),
     mutationFn: async (word: string): Promise<Submitted> => {
-      const track = { language, length };
       const key = keyForGuess(word);
       try {
         return await submitGuess(track, word, key);
       } catch (failure) {
         // A Guess never creates a Game (ADR 0022), so the first one on a Track
-        // is answered with a 401 until there is a Game to attach it to. The
-        // only branch here: every other failure is the caller's to read.
+        // is answered with a 401 until there is a Game to attach it to. Only a
+        // current board may start one here; an old board must ask for a refresh.
         if (!(failure instanceof ApiError) || failure.code !== "NO_GAME_TOKEN") throw failure;
+        if (board?.day !== wordlexDay()) {
+          throw new ApiError("BOARD_EXPIRED", "this board belongs to an earlier WordleX Day");
+        }
         await startGame(track, keyForStart());
         // The same key goes out again — a second uuid would spend a second row.
         return await submitGuess(track, word, key);
@@ -154,6 +169,8 @@ export function useGame(language: Language, length: Length) {
       // The server answered, so the key has done its job.
       guessKey.current = undefined;
 
+      setBoard(submitted.game);
+
       // Not an error and not a Guess — our Dictionary is missing a word, and
       // the API has written it down (ADR 0009). The row is not spent.
       if (submitted.outcome === "unknown_word") {
@@ -162,7 +179,6 @@ export function useGame(language: Language, length: Length) {
 
       const next = submitted.game;
       setTyped("");
-      queryClient.setQueryData(boardKey, next);
       if (stillness()) return settle(next);
       setRevealing(next.guesses.length - 1);
       later(() => {
@@ -185,7 +201,7 @@ export function useGame(language: Language, length: Length) {
       if (failure.code === "GAME_OVER") {
         const ended = (failure.details as { game?: Board } | undefined)?.game;
         if (ended) {
-          queryClient.setQueryData(boardKey, ended);
+          setBoard(ended);
           setTyped("");
           setSheet(true);
         }
@@ -250,6 +266,7 @@ export function useGame(language: Language, length: Length) {
   function press(input: string) {
     if (board === undefined || over || guess.isPending || revealing !== undefined) return;
     if (input === "ENTER") {
+      if (board.day !== wordlexDay()) return refuse(trouble("BOARD_EXPIRED"));
       if (typed.length < length) return refuse("Not enough Tiles.");
       return guess.mutate(typed);
     }
