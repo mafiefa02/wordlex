@@ -21,3 +21,8 @@ data/.cache/
 # Vendored agent skills, restored from skills-lock.json
 .agents/skills/
 .claude/skills/
+
+# graft's local graph cache and the ripgrep rules that go with it. Both are
+# generated and regenerable — run `graft build` to get them back.
+/graft/
+/.ignore
