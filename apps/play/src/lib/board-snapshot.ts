@@ -3,10 +3,25 @@ import type { Board, Track } from "./api";
 
 const PREFIX = "wordlex:board:v1:";
 
+/**
+ * The board as it goes to disk. The API sends the Answer the moment the Game
+ * ends, but a lost board keeps it from the Player until the WordleX Day is over
+ * — writing it here would leave it in plain sight under a known key hours
+ * early, which is the one thing the sheet's `dayOver` guard exists to prevent.
+ *
+ * A restored board is always the current Day's, so the Answer it is missing is
+ * one the sheet would not show yet, and the read every mount fires brings it
+ * back long before the rollover that would. The exception is a lost board whose
+ * read failed and that is left open across 00:00 WIB: the reveal finds nothing
+ * to show. A word withheld from someone owed it beats a word handed to everyone
+ * else early, and a reload is all it takes to get it back.
+ */
+type StoredBoard = Omit<Board, "answer">;
+
 type BoardSnapshot = {
   version: 1;
   savedAt: number;
-  board: Board;
+  board: StoredBoard;
 };
 
 function keyFor({ language, length }: Track) {
@@ -17,14 +32,17 @@ function isMark(value: unknown): value is Mark {
   return value === "exact" || value === "present" || value === "absent";
 }
 
-function isBoard(value: unknown): value is Board {
+function isBoard(value: unknown): value is StoredBoard {
   if (typeof value !== "object" || value === null) return false;
   const board = value as Record<string, unknown>;
   if (
     typeof board.day !== "string" ||
     !["playing", "won", "lost", "abandoned"].includes(String(board.status)) ||
     !Array.isArray(board.guesses) ||
-    ("answer" in board && board.answer !== undefined && typeof board.answer !== "string")
+    // A stored Answer can only be a snapshot written before it was dropped.
+    // Throwing that snapshot away costs one network read and leaves one fewer
+    // shape to reason about.
+    "answer" in board
   ) {
     return false;
   }
@@ -44,7 +62,7 @@ function isBoardSnapshot(value: unknown): value is BoardSnapshot {
 }
 
 /** Reads a current-WordleX-Day board, or falls back to the normal API read. */
-export function readBoardSnapshot(track: Track): Board | undefined {
+export function readBoardSnapshot(track: Track): StoredBoard | undefined {
   if (typeof window === "undefined") return undefined;
   const key = keyFor(track);
   try {
@@ -61,8 +79,8 @@ export function readBoardSnapshot(track: Track): Board | undefined {
   }
 }
 
-/** Stores only a Board the API has already returned. */
-export function saveBoardSnapshot(track: Track, board: Board) {
+/** Stores only a Board the API has already returned, minus the Answer. */
+export function saveBoardSnapshot(track: Track, { answer: _answer, ...board }: Board) {
   if (typeof window === "undefined") return;
   try {
     const snapshot: BoardSnapshot = { version: 1, savedAt: Date.now(), board };

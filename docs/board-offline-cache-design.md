@@ -14,8 +14,16 @@ so every mount still reads the board from the API and replaces the snapshot
 when needed.
 
 Board reads and authoritative Guess responses save both the query cache and the
-Track snapshot. No typed Tiles, Game tokens, idempotency keys, Account data,
-errors, or animation state are persisted.
+Track snapshot. No Answer, typed Tiles, Game tokens, idempotency keys, Account
+data, errors, or animation state are persisted.
+
+The Answer is the one field the API does send and the snapshot drops. A lost
+board is not shown its Answer until the WordleX Day is over, and storage is
+readable long before that. A successful mount read brings the Answer back in
+time for the rollover that reveals it; a lost board whose read failed and that
+is left open across the rollover reveals nothing until it is reloaded. A
+snapshot still carrying an Answer is from before this and is discarded, which
+also takes the stored Answer off disk.
 
 Signing out clears only WordleX board snapshot keys before the existing reload.
 An open board does not refresh itself at the next WordleX Day. A Guess against
